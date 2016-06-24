@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class AddNoteCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -52,7 +53,7 @@ public class AddNoteCommand extends AutoCompleteNameTabCommand<BanManager> {
                         player = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(UUID.fromString(playerName)));
                     } catch (Exception e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {
@@ -71,7 +72,7 @@ public class AddNoteCommand extends AutoCompleteNameTabCommand<BanManager> {
                         actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
                     } catch (SQLException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {
@@ -84,7 +85,7 @@ public class AddNoteCommand extends AutoCompleteNameTabCommand<BanManager> {
                     plugin.getPlayerNoteStorage().addNote(warning);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 }
 
             }

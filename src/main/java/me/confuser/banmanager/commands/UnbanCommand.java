@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class UnbanCommand extends BukkitCommand<BanManager> implements TabCompleter {
 
@@ -84,7 +85,7 @@ public class UnbanCommand extends BukkitCommand<BanManager> implements TabComple
                         actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
                     } catch (SQLException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {
@@ -104,7 +105,7 @@ public class UnbanCommand extends BukkitCommand<BanManager> implements TabComple
                     unbanned = plugin.getPlayerBanStorage().unban(ban, actor, reason);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 

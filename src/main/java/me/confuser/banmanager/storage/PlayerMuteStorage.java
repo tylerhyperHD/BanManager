@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import me.confuser.banmanager.PluginLogger;
 
 public class PlayerMuteStorage extends BaseDaoImpl<PlayerMuteData, Integer> {
 
@@ -52,13 +53,13 @@ public class PlayerMuteStorage extends BaseDaoImpl<PlayerMuteData, Integer> {
             try {
                 mutes.put(mute.getPlayer().getUUID(), mute);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to retrieve mute id " + mute.getId() + " due to missing player data");
+                PluginLogger.severe("Failed to retrieve mute id " + mute.getId() + " due to missing player data");
             }
         }
 
         itr.close();
 
-        plugin.getLogger().info("Loaded " + mutes.size() + " mutes into memory");
+        PluginLogger.info("Loaded " + mutes.size() + " mutes into memory");
     }
 
     public ConcurrentHashMap<UUID, PlayerMuteData> getMutes() {
@@ -70,6 +71,7 @@ public class PlayerMuteStorage extends BaseDaoImpl<PlayerMuteData, Integer> {
     }
 
     public PlayerMuteData retrieveMute(UUID uuid) throws SQLException {
+        @SuppressWarnings("LocalVariableHidesMemberVariable")
         List<PlayerMuteData> mutes = queryForEq("player_id", UUIDUtils.toBytes(uuid));
 
         if (mutes.isEmpty()) {

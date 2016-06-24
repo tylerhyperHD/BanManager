@@ -58,7 +58,7 @@ public class ActivityCommand extends AutoCompleteNameTabCommand<BanManager> {
                     results = plugin.getActivityStorage().getSince(since);
                 }
 
-                if (results == null || results.size() == 0) {
+                if (results == null || results.isEmpty()) {
                     Message.get("bmactivity.noResults").sendTo(sender);
                     return;
                 }

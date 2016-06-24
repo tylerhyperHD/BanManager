@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class TempWarnCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -121,7 +122,7 @@ public class TempWarnCommand extends AutoCompleteNameTabCommand<BanManager> {
                     }
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 
@@ -141,7 +142,7 @@ public class TempWarnCommand extends AutoCompleteNameTabCommand<BanManager> {
                     created = plugin.getPlayerWarnStorage().addWarning(warning, isSilent);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 
@@ -188,7 +189,7 @@ public class TempWarnCommand extends AutoCompleteNameTabCommand<BanManager> {
                     actionCommands = plugin.getConfiguration().getWarningActions()
                             .getCommand((int) plugin.getPlayerWarnStorage().getPointsCount(player));
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 

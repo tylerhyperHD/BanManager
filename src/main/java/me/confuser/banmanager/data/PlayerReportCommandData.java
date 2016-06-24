@@ -4,8 +4,8 @@ import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import lombok.Getter;
 import me.confuser.banmanager.storage.mysql.ByteArray;
-import org.bukkit.Location;
 
+@SuppressWarnings("FieldMayBeFinal")
 @DatabaseTable
 public class PlayerReportCommandData {
 

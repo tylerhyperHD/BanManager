@@ -5,6 +5,7 @@ import com.j256.ormlite.table.DatabaseTable;
 import lombok.Getter;
 import me.confuser.banmanager.storage.mysql.ByteArray;
 
+@SuppressWarnings("FieldMayBeFinal")
 @DatabaseTable
 public class IpMuteRecord {
 

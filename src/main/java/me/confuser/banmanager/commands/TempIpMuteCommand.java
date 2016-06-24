@@ -15,6 +15,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class TempIpMuteCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -121,7 +122,7 @@ public class TempIpMuteCommand extends AutoCompleteNameTabCommand<BanManager> {
                             plugin.getIpMuteStorage().unmute(mute, actor);
                         } catch (SQLException e) {
                             sender.sendMessage(Message.get("sender.error.exception").toString());
-                            e.printStackTrace();
+                            PluginLogger.warn(e);
                             return;
                         }
                     }
@@ -134,7 +135,7 @@ public class TempIpMuteCommand extends AutoCompleteNameTabCommand<BanManager> {
                     created = plugin.getIpMuteStorage().mute(mute, isSilent);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 
@@ -152,6 +153,7 @@ public class TempIpMuteCommand extends AutoCompleteNameTabCommand<BanManager> {
                 // Find online players
                 plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
 
+                    @Override
                     public void run() {
                         Message message = Message.get("tempmuteip.ip.disallowed")
                                 .set("reason", mute.getReason())

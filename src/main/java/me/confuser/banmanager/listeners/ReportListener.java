@@ -14,6 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class ReportListener extends Listeners<BanManager> {
 
@@ -52,13 +53,13 @@ public class ReportListener extends Listeners<BanManager> {
         try {
             createLocation(report, player);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         }
 
         try {
             createLocation(report, actor);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         }
     }
 

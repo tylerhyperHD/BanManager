@@ -10,12 +10,12 @@ import me.confuser.banmanager.util.IPUtils;
 import me.confuser.banmanager.util.UUIDUtils;
 import me.confuser.bukkitutil.Message;
 import me.confuser.bukkitutil.commands.BukkitCommand;
-import org.apache.commons.lang.StringUtils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class TempIpRangeBanCommand extends BukkitCommand<BanManager> {
 
@@ -96,7 +96,7 @@ public class TempIpRangeBanCommand extends BukkitCommand<BanManager> {
                         actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
                     } catch (SQLException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {
@@ -110,7 +110,7 @@ public class TempIpRangeBanCommand extends BukkitCommand<BanManager> {
                     created = plugin.getIpRangeBanStorage().ban(ban, isSilent);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 
@@ -121,6 +121,7 @@ public class TempIpRangeBanCommand extends BukkitCommand<BanManager> {
                 // Find online players
                 plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
 
+                    @Override
                     public void run() {
                         Message kickMessage = Message.get("tempbaniprange.ip.kick")
                                 .set("reason", ban.getReason())

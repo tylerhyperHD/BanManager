@@ -7,7 +7,6 @@ import me.confuser.banmanager.data.PlayerMuteData;
 import me.confuser.banmanager.util.CommandParser;
 import me.confuser.banmanager.util.CommandUtils;
 import me.confuser.banmanager.util.DateUtils;
-import me.confuser.banmanager.util.UUIDUtils;
 import me.confuser.banmanager.util.parsers.Reason;
 import me.confuser.bukkitutil.Message;
 import org.bukkit.command.Command;
@@ -16,6 +15,7 @@ import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class TempMuteCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -151,7 +151,7 @@ public class TempMuteCommand extends AutoCompleteNameTabCommand<BanManager> {
                             plugin.getPlayerMuteStorage().unmute(mute, actor);
                         } catch (SQLException e) {
                             sender.sendMessage(Message.get("sender.error.exception").toString());
-                            e.printStackTrace();
+                            PluginLogger.warn(e);
                             return;
                         }
                     }
@@ -164,7 +164,7 @@ public class TempMuteCommand extends AutoCompleteNameTabCommand<BanManager> {
                     created = plugin.getPlayerMuteStorage().mute(mute, isSilent);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 

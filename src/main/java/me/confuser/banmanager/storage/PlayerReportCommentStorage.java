@@ -6,7 +6,6 @@ import com.j256.ormlite.table.DatabaseTableConfig;
 import com.j256.ormlite.table.TableUtils;
 import me.confuser.banmanager.BanManager;
 import me.confuser.banmanager.data.PlayerReportCommentData;
-
 import java.sql.SQLException;
 
 public class PlayerReportCommentStorage extends BaseDaoImpl<PlayerReportCommentData, Integer> {

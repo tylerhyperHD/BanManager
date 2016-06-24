@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class LeaveListener extends Listeners<BanManager> {
 
@@ -20,7 +21,7 @@ public class LeaveListener extends Listeners<BanManager> {
             final PlayerHistoryData data = plugin.getPlayerHistoryStorage().remove(event.getPlayer().getUniqueId());
 
             if (data == null) {
-                plugin.getLogger().warning("Could not find " + event.getPlayer().getName() + " session history, perhaps they "
+                PluginLogger.warn("Could not find " + event.getPlayer().getName() + " session history, perhaps they "
                         + "disconnected too quickly?");
                 return;
             }
@@ -34,7 +35,7 @@ public class LeaveListener extends Listeners<BanManager> {
                     try {
                         plugin.getPlayerHistoryStorage().create(data);
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                     }
                 }
             });

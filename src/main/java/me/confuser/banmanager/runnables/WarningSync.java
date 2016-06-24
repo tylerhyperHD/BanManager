@@ -1,18 +1,15 @@
 package me.confuser.banmanager.runnables;
 
 import com.j256.ormlite.dao.CloseableIterator;
-import me.confuser.banmanager.data.PlayerBanData;
-import me.confuser.banmanager.data.PlayerBanRecord;
 import me.confuser.banmanager.data.PlayerWarnData;
-import me.confuser.banmanager.storage.PlayerBanStorage;
 import me.confuser.banmanager.storage.PlayerWarnStorage;
 import me.confuser.bukkitutil.Message;
 import org.bukkit.entity.Player;
-
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class WarningSync extends BmRunnable {
-
     private PlayerWarnStorage warnStorage = plugin.getPlayerWarnStorage();
 
     public WarningSync() {
@@ -62,7 +59,7 @@ public class WarningSync extends BmRunnable {
                                 try {
                                     plugin.getPlayerWarnStorage().update(warn);
                                 } catch (SQLException e) {
-                                    e.printStackTrace();
+                                    PluginLogger.warn(e);
                                 }
                             }
                         });
@@ -72,7 +69,7 @@ public class WarningSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

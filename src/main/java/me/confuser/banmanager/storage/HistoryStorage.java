@@ -14,6 +14,7 @@ import me.confuser.banmanager.util.parsers.InfoCommandParser;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import me.confuser.banmanager.PluginLogger;
 
 public class HistoryStorage {
 
@@ -62,7 +63,7 @@ public class HistoryStorage {
         try {
             connection = localConn.getReadOnlyConnection();
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
 
             return null;
         }
@@ -119,7 +120,7 @@ public class HistoryStorage {
 
             result = statement.runQuery(null);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
 
             return null;
         }
@@ -141,7 +142,7 @@ public class HistoryStorage {
                 });
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             result.closeQuietly();
         }
@@ -157,7 +158,7 @@ public class HistoryStorage {
         try {
             connection = localConn.getReadOnlyConnection();
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
 
             return null;
         }
@@ -209,7 +210,7 @@ public class HistoryStorage {
 
             result = statement.runQuery(null);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
 
             return null;
         }
@@ -231,7 +232,7 @@ public class HistoryStorage {
                 });
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             result.closeQuietly();
         }

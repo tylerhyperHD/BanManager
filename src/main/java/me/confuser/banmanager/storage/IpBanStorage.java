@@ -19,10 +19,11 @@ import org.bukkit.Bukkit;
 
 import java.net.InetAddress;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class IpBanStorage extends BaseDaoImpl<IpBanData, Integer> {
 
     private BanManager plugin = BanManager.getPlugin();
@@ -46,7 +47,7 @@ public class IpBanStorage extends BaseDaoImpl<IpBanData, Integer> {
 
         itr.close();
 
-        plugin.getLogger().info("Loaded " + bans.size() + " ip bans into memory");
+        PluginLogger.info("Loaded " + bans.size() + " ip bans into memory");
     }
 
     public ConcurrentHashMap<Long, IpBanData> getBans() {
@@ -62,6 +63,7 @@ public class IpBanStorage extends BaseDaoImpl<IpBanData, Integer> {
     }
 
     public IpBanData retrieveBan(long ip) throws SQLException {
+        @SuppressWarnings("LocalVariableHidesMemberVariable")
         List<IpBanData> bans = queryForEq("ip", ip);
 
         if (bans.isEmpty()) {

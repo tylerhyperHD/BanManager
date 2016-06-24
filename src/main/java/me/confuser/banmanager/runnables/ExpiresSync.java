@@ -6,7 +6,9 @@ import me.confuser.banmanager.storage.*;
 import me.confuser.banmanager.util.DateUtils;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class ExpiresSync extends BmRunnable {
 
     private PlayerBanStorage banStorage = plugin.getPlayerBanStorage();
@@ -42,7 +44,7 @@ public class ExpiresSync extends BmRunnable {
                 banStorage.delete(ban);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (bans != null) {
                 bans.closeQuietly();
@@ -61,7 +63,7 @@ public class ExpiresSync extends BmRunnable {
                 muteStorage.delete(mute);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (mutes != null) {
                 mutes.closeQuietly();
@@ -79,7 +81,7 @@ public class ExpiresSync extends BmRunnable {
                 warnStorage.delete(warning);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (warnings != null) {
                 warnings.closeQuietly();
@@ -99,7 +101,7 @@ public class ExpiresSync extends BmRunnable {
                 ipBanStorage.delete(ban);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (ipBans != null) {
                 ipBans.closeQuietly();
@@ -118,7 +120,7 @@ public class ExpiresSync extends BmRunnable {
                 ipMuteStorage.delete(mute);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (ipMutes != null) {
                 ipMutes.closeQuietly();
@@ -138,7 +140,7 @@ public class ExpiresSync extends BmRunnable {
                 ipRangeBanStorage.delete(ban);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (ipRangeBans != null) {
                 ipRangeBans.closeQuietly();

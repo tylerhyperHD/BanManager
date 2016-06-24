@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import me.confuser.banmanager.PluginLogger;
 
 /**
  * Based on UUIDFetcher by evilmidget38
@@ -45,6 +46,7 @@ public class UUIDUtils implements Callable<Map<String, UUID>> {
         this(names, true);
     }
 
+    @SuppressWarnings("ConvertToTryWithResources")
     private static void writeBody(HttpURLConnection connection, String body) throws Exception {
         OutputStream stream = connection.getOutputStream();
         stream.write(body.getBytes());
@@ -105,7 +107,7 @@ public class UUIDUtils implements Callable<Map<String, UUID>> {
     }
 
     public static String getCurrentName(UUID uuid) throws Exception {
-        BanManager.plugin.getLogger().info("Requesting name for " + uuid.toString());
+        PluginLogger.info("Requesting name for " + uuid.toString());
         String url = "https://api.mojang.com/user/profiles/" + uuid.toString().replace("-", "") + "/names";
 
         HttpURLConnection connection = createConnection(url, "GET");
@@ -118,7 +120,7 @@ public class UUIDUtils implements Callable<Map<String, UUID>> {
 
         JSONArray array = (JSONArray) jsonParser.parse(new InputStreamReader(connection.getInputStream()));
 
-        if (array.size() == 0) {
+        if (array.isEmpty()) {
             return null;
         }
 
@@ -132,7 +134,7 @@ public class UUIDUtils implements Callable<Map<String, UUID>> {
             return new UUIDProfile(name, createUUID(name));
         }
 
-        BanManager.plugin.getLogger().info("Requesting UUID for " + name + " at " + time);
+        PluginLogger.info("Requesting UUID for " + name + " at " + time);
         String url = "https://api.mojang.com/users/profiles/minecraft/" + name + "?at=" + time;
 
         HttpURLConnection connection = createConnection(url, "GET");
@@ -145,7 +147,7 @@ public class UUIDUtils implements Callable<Map<String, UUID>> {
 
         JSONObject obj = (JSONObject) jsonParser.parse(new InputStreamReader(connection.getInputStream()));
 
-        if (obj.size() == 0) {
+        if (obj.isEmpty()) {
             return null;
         }
 
@@ -154,11 +156,13 @@ public class UUIDUtils implements Callable<Map<String, UUID>> {
         return profile;
     }
 
+    @Override
+    @SuppressWarnings("SleepWhileInLoop")
     public Map<String, UUID> call() throws Exception {
 
         Map<String, UUID> uuidMap = new HashMap<>();
         if (!BanManager.getPlugin().getConfiguration().isOnlineMode()) {
-            BanManager.plugin.getLogger().info("Generating offline UUIDs for " + StringUtils.join(names, ','));
+            PluginLogger.info("Generating offline UUIDs for " + StringUtils.join(names, ','));
 
             for (String s : names) {
                 uuidMap.put(s, createUUID(s));
@@ -167,7 +171,7 @@ public class UUIDUtils implements Callable<Map<String, UUID>> {
             return uuidMap;
         }
 
-        BanManager.plugin.getLogger().info("Requesting UUIDs for " + StringUtils.join(names, ','));
+        PluginLogger.info("Requesting UUIDs for " + StringUtils.join(names, ','));
 
         int requests = (int) Math.ceil(names.size() / PROFILES_PER_REQUEST);
         for (int i = 0; i < requests; i++) {

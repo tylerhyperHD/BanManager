@@ -7,9 +7,10 @@ import me.confuser.banmanager.data.global.GlobalPlayerMuteRecordData;
 import me.confuser.banmanager.storage.PlayerMuteStorage;
 import me.confuser.banmanager.storage.global.GlobalPlayerMuteRecordStorage;
 import me.confuser.banmanager.storage.global.GlobalPlayerMuteStorage;
-
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class GlobalMuteSync extends BmRunnable {
 
     private GlobalPlayerMuteStorage muteStorage = plugin.getGlobalPlayerMuteStorage();
@@ -49,7 +50,7 @@ public class GlobalMuteSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();
@@ -75,7 +76,7 @@ public class GlobalMuteSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

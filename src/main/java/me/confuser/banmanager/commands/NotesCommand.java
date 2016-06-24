@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import me.confuser.banmanager.PluginLogger;
 
 public class NotesCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -63,7 +64,7 @@ public class NotesCommand extends AutoCompleteNameTabCommand<BanManager> {
                             notes.add(noteMessage);
                         }
 
-                        if (notes.size() == 0) {
+                        if (notes.isEmpty()) {
                             Message.get("notes.error.noNotes").set("player", player.getName()).sendTo(sender);
                             return;
                         }
@@ -78,7 +79,7 @@ public class NotesCommand extends AutoCompleteNameTabCommand<BanManager> {
                         }
 
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                     } finally {
                         if (notesItr != null) {
                             notesItr.closeQuietly();
@@ -94,7 +95,7 @@ public class NotesCommand extends AutoCompleteNameTabCommand<BanManager> {
                 public void run() {
                     Collection<? extends Player> onlinePlayers = plugin.getServer().getOnlinePlayers();
 
-                    if (onlinePlayers.size() == 0) {
+                    if (onlinePlayers.isEmpty()) {
                         Message.get("notes.error.noOnlineNotes").sendTo(sender);
                         return;
                     }
@@ -122,7 +123,7 @@ public class NotesCommand extends AutoCompleteNameTabCommand<BanManager> {
                             notes.add(noteMessage);
                         }
 
-                        if (notes.size() == 0) {
+                        if (notes.isEmpty()) {
                             Message.get("notes.error.noOnlineNotes").sendTo(sender);
                             return;
                         }
@@ -132,7 +133,7 @@ public class NotesCommand extends AutoCompleteNameTabCommand<BanManager> {
                         }
 
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                     } finally {
                         if (notesItr != null) {
                             notesItr.closeQuietly();

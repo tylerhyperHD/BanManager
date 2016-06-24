@@ -4,6 +4,7 @@ import lombok.Getter;
 import me.confuser.banmanager.data.IpRangeBanData;
 import me.confuser.banmanager.data.PlayerData;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class IpRangeUnbanEvent extends CustomCancellableEvent {
 
     @Getter

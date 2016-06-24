@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import me.confuser.banmanager.storage.mysql.ByteArray;
 
+@SuppressWarnings("FieldMayBeFinal")
 @DatabaseTable
 public class PlayerReportData {
 

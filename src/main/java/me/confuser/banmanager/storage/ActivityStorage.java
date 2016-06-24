@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import me.confuser.banmanager.PluginLogger;
 
 public class ActivityStorage {
 
@@ -196,7 +197,7 @@ public class ActivityStorage {
         try {
             connection = localConn.getReadOnlyConnection();
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
 
             return null;
         }
@@ -219,7 +220,7 @@ public class ActivityStorage {
             }
             result = statement.runQuery(null);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
             connection.closeQuietly();
 
             return null;
@@ -243,7 +244,7 @@ public class ActivityStorage {
                 results.add(map);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             result.closeQuietly();
         }

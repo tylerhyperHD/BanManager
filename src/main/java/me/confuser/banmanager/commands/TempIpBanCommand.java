@@ -12,6 +12,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class TempIpBanCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -112,7 +113,7 @@ public class TempIpBanCommand extends AutoCompleteNameTabCommand<BanManager> {
                             plugin.getIpBanStorage().unban(ban, actor);
                         } catch (SQLException e) {
                             sender.sendMessage(Message.get("sender.error.exception").toString());
-                            e.printStackTrace();
+                            PluginLogger.warn(e);
                             return;
                         }
                     }
@@ -125,7 +126,7 @@ public class TempIpBanCommand extends AutoCompleteNameTabCommand<BanManager> {
                     created = plugin.getIpBanStorage().ban(ban, isSilent);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 
@@ -136,6 +137,7 @@ public class TempIpBanCommand extends AutoCompleteNameTabCommand<BanManager> {
                 // Find online players
                 plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
 
+                    @Override
                     public void run() {
                         Message kickMessage = Message.get("tempbanip.ip.kick").set("reason", ban.getReason()).set("actor", actor
                                 .getName());

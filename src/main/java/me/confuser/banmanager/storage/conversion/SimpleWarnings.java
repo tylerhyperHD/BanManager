@@ -11,6 +11,7 @@ import me.confuser.banmanager.data.PlayerWarnData;
 import java.io.File;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import me.confuser.banmanager.PluginLogger;
 
 public class SimpleWarnings implements IConverter {
 
@@ -22,8 +23,7 @@ public class SimpleWarnings implements IConverter {
             connection = new JdbcPooledConnectionSource("jdbc:sqlite:" + new File(plugin.getDataFolder().getParent(),
                     "SimpleWarnings/Warnings.db").getAbsolutePath());
         } catch (SQLException e) {
-            e.printStackTrace();
-            plugin.getLogger().severe("Failed to connect to SimpleWarnings database");
+            PluginLogger.severe("Failed to connect to SimpleWarnings database\n" + e);
             return;
         }
 
@@ -31,8 +31,7 @@ public class SimpleWarnings implements IConverter {
         try {
             connection.initialize();
         } catch (SQLException e) {
-            e.printStackTrace();
-            plugin.getLogger().severe("Failed to connect to SimpleWarnings database");
+            PluginLogger.severe("Failed to connect to SimpleWarnings database\n" + e);
             return;
         }
 
@@ -49,8 +48,7 @@ public class SimpleWarnings implements IConverter {
         try {
             read = connection.getReadOnlyConnection();
         } catch (SQLException e) {
-            e.printStackTrace();
-            plugin.getLogger().severe("Failed to connect to SimpleWarnings database");
+            PluginLogger.severe("Failed to connect to SimpleWarnings database\n" + e);
             return;
         }
 
@@ -61,7 +59,7 @@ public class SimpleWarnings implements IConverter {
                     .compileStatement("SELECT `name`, `warning`, `placedby`, `date` FROM SimpleWarnings", StatementBuilder.StatementType.SELECT, null, DatabaseConnection.DEFAULT_RESULT_FLAGS)
                     .runQuery(null);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
             return;
         }
 
@@ -76,7 +74,7 @@ public class SimpleWarnings implements IConverter {
                 PlayerData actor = plugin.getPlayerStorage().retrieve(actorName, false);
 
                 if (playerData == null) {
-                    plugin.getLogger().severe(name + " warning creation failed, unable to lookup UUID");
+                    PluginLogger.severe(name + " warning creation failed, unable to lookup UUID");
                     continue;
                 }
 
@@ -87,20 +85,20 @@ public class SimpleWarnings implements IConverter {
                 PlayerWarnData data = new PlayerWarnData(playerData, actor, reason, true, 0, created.getTime() / 1000L);
 
                 // Disallow duplicates
-                if (plugin.getPlayerWarnStorage().queryForMatchingArgs(data).size() != 0) {
+                if (!plugin.getPlayerWarnStorage().queryForMatchingArgs(data).isEmpty()) {
                     continue;
                 }
 
                 plugin.getPlayerWarnStorage().addWarning(data, true);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             results.closeQuietly();
         }
 
         read.closeQuietly();
-        plugin.getLogger().info("Imported " + count + " rows from SimpleWarnings");
+        PluginLogger.info("Imported " + count + " rows from SimpleWarnings");
     }
 
     @Override

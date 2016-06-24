@@ -3,6 +3,7 @@ package me.confuser.banmanager.events;
 import lombok.Getter;
 import me.confuser.banmanager.data.PlayerNoteData;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class PlayerNoteCreatedEvent extends CustomCancellableEvent {
 
     @Getter

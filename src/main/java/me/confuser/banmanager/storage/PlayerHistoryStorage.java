@@ -12,6 +12,7 @@ import me.confuser.banmanager.data.PlayerHistoryData;
 import java.sql.SQLException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import me.confuser.banmanager.PluginLogger;
 
 public class PlayerHistoryStorage extends BaseDaoImpl<PlayerHistoryData, Integer> {
 
@@ -48,7 +49,7 @@ public class PlayerHistoryStorage extends BaseDaoImpl<PlayerHistoryData, Integer
             try {
                 create(data);
             } catch (SQLException e) {
-                e.printStackTrace();
+                PluginLogger.warn(e);
                 break; // Don't slow down shut down if problems with the connection
             }
         }

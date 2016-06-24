@@ -16,6 +16,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class BanIpRangeCommand extends BukkitCommand<BanManager> {
 
@@ -80,7 +81,7 @@ public class BanIpRangeCommand extends BukkitCommand<BanManager> {
                         actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
                     } catch (SQLException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {
@@ -94,7 +95,7 @@ public class BanIpRangeCommand extends BukkitCommand<BanManager> {
                     created = plugin.getIpRangeBanStorage().ban(ban, isSilent);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 
@@ -105,6 +106,7 @@ public class BanIpRangeCommand extends BukkitCommand<BanManager> {
                 // Find online players
                 plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
 
+                    @Override
                     public void run() {
                         Message kickMessage = Message.get("baniprange.ip.kick")
                                 .set("reason", ban.getReason())

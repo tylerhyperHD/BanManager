@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class PlayerStorage extends BaseDaoImpl<PlayerData, byte[]> {
 
     private BanManager plugin = BanManager.getPlugin();
@@ -82,7 +84,7 @@ public class PlayerStorage extends BaseDaoImpl<PlayerData, byte[]> {
                 autoCompleteTree.put(itr.next().getName(), VoidValue.SINGLETON);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();
@@ -116,8 +118,7 @@ public class PlayerStorage extends BaseDaoImpl<PlayerData, byte[]> {
             try {
                 newName = UUIDUtils.getCurrentName(player.getUUID());
             } catch (Exception e) {
-                plugin.getLogger()
-                        .warning("Duplicates found for " + data.getName() + ", was unable to contact Mojang for updated names");
+                PluginLogger.warn("Duplicates found for " + data.getName() + ", was unable to contact Mojang for updated names");
                 continue;
             }
 
@@ -157,7 +158,7 @@ public class PlayerStorage extends BaseDaoImpl<PlayerData, byte[]> {
                 return results.get(0);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         }
 
         if (!mojangLookup) {
@@ -178,7 +179,7 @@ public class PlayerStorage extends BaseDaoImpl<PlayerData, byte[]> {
 
             return data;
         } catch (Exception e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         }
 
         return null;
@@ -201,7 +202,7 @@ public class PlayerStorage extends BaseDaoImpl<PlayerData, byte[]> {
 
             query.setWhere(where);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
             return players;
         }
 
@@ -214,7 +215,7 @@ public class PlayerStorage extends BaseDaoImpl<PlayerData, byte[]> {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

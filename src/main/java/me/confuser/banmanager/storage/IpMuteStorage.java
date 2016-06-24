@@ -21,7 +21,9 @@ import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class IpMuteStorage extends BaseDaoImpl<IpMuteData, Integer> {
 
     private BanManager plugin = BanManager.getPlugin();
@@ -45,7 +47,7 @@ public class IpMuteStorage extends BaseDaoImpl<IpMuteData, Integer> {
 
         itr.close();
 
-        plugin.getLogger().info("Loaded " + mutes.size() + " ip mutes into memory");
+        PluginLogger.info("Loaded " + mutes.size() + " ip mutes into memory");
     }
 
     public ConcurrentHashMap<Long, IpMuteData> getMutes() {
@@ -61,6 +63,7 @@ public class IpMuteStorage extends BaseDaoImpl<IpMuteData, Integer> {
     }
 
     public IpMuteData retrieveMute(long ip) throws SQLException {
+        @SuppressWarnings("LocalVariableHidesMemberVariable")
         List<IpMuteData> mutes = queryForEq("ip", ip);
 
         if (mutes.isEmpty()) {

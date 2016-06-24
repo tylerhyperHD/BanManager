@@ -25,6 +25,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class JoinListener extends Listeners<BanManager> {
 
@@ -40,7 +41,7 @@ public class JoinListener extends Listeners<BanManager> {
                         plugin.getIpBanStorage().addBan(ban);
                     }
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 }
             }
 
@@ -52,7 +53,7 @@ public class JoinListener extends Listeners<BanManager> {
                         plugin.getPlayerBanStorage().addBan(ban);
                     }
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 }
             }
 
@@ -64,7 +65,7 @@ public class JoinListener extends Listeners<BanManager> {
                         plugin.getPlayerMuteStorage().addMute(mute);
                     }
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 }
             }
         }
@@ -76,7 +77,7 @@ public class JoinListener extends Listeners<BanManager> {
                 try {
                     plugin.getIpRangeBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 }
 
                 return;
@@ -107,7 +108,7 @@ public class JoinListener extends Listeners<BanManager> {
                 try {
                     plugin.getIpBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 }
 
                 return;
@@ -138,7 +139,7 @@ public class JoinListener extends Listeners<BanManager> {
             try {
                 plugin.getPlayerBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
             } catch (SQLException e) {
-                e.printStackTrace();
+                PluginLogger.warn(e);
             }
 
             return;
@@ -185,7 +186,7 @@ public class JoinListener extends Listeners<BanManager> {
         try {
             plugin.getPlayerStorage().createOrUpdate(player);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
             return;
         }
 
@@ -199,6 +200,7 @@ public class JoinListener extends Listeners<BanManager> {
     public void onJoin(final PlayerJoinEvent event) {
         plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, new Runnable() {
 
+            @Override
             public void run() {
                 // Handle quick disconnects
                 if (event.getPlayer() == null || !event.getPlayer().isOnline()) {
@@ -223,7 +225,7 @@ public class JoinListener extends Listeners<BanManager> {
                         notes.add(noteMessage.toString());
                     }
 
-                    if (notes.size() != 0) {
+                    if (!notes.isEmpty()) {
                         String header = Message.get("notes.header")
                                 .set("player", event.getPlayer().getName())
                                 .toString();
@@ -236,7 +238,7 @@ public class JoinListener extends Listeners<BanManager> {
 
                     }
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 } finally {
                     if (notesItr != null) {
                         notesItr.closeQuietly();
@@ -262,7 +264,7 @@ public class JoinListener extends Listeners<BanManager> {
                         plugin.getPlayerWarnStorage().update(warning);
                     }
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 } finally {
                     if (warnings != null) {
                         warnings.closeQuietly();
@@ -273,11 +275,11 @@ public class JoinListener extends Listeners<BanManager> {
                     try {
                         ReportList openReports = plugin.getPlayerReportStorage().getReports(1, 1);
 
-                        if (openReports == null || openReports.getList().size() != 0) {
+                        if (openReports == null || !openReports.getList().isEmpty()) {
                             CommandUtils.sendReportList(openReports, event.getPlayer(), 1);
                         }
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                     }
                 }
 
@@ -285,11 +287,11 @@ public class JoinListener extends Listeners<BanManager> {
                     try {
                         ReportList assignedReports = plugin.getPlayerReportStorage().getReports(1, 2, event.getPlayer().getUniqueId());
 
-                        if (assignedReports == null || assignedReports.getList().size() != 0) {
+                        if (assignedReports == null || !assignedReports.getList().isEmpty()) {
                             CommandUtils.sendReportList(assignedReports, event.getPlayer(), 1);
                         }
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                     }
                 }
 
@@ -342,6 +344,7 @@ public class JoinListener extends Listeners<BanManager> {
 
         plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, new Runnable() {
 
+            @Override
             public void run() {
                 final long ip = IPUtils.toLong(event.getAddress());
                 final UUID uuid = event.getPlayer().getUniqueId();
@@ -355,7 +358,7 @@ public class JoinListener extends Listeners<BanManager> {
                     try {
                         denyAlts(duplicates, uuid);
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                     }
                 }
 
@@ -363,7 +366,7 @@ public class JoinListener extends Listeners<BanManager> {
                     try {
                         punishAlts(duplicates, uuid);
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                     }
                 }
 

@@ -13,6 +13,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class KickCommand extends BukkitCommand<BanManager> {
 
@@ -119,7 +120,7 @@ public class KickCommand extends BukkitCommand<BanManager> {
                         created = plugin.getPlayerKickStorage().addKick(data);
                     } catch (SQLException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
 

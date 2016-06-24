@@ -1,14 +1,13 @@
 package me.confuser.banmanager.runnables;
 
 import com.j256.ormlite.dao.CloseableIterator;
-import lombok.Getter;
-import me.confuser.banmanager.BanManager;
 import me.confuser.banmanager.data.PlayerMuteData;
 import me.confuser.banmanager.data.PlayerMuteRecord;
 import me.confuser.banmanager.storage.PlayerMuteStorage;
-
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class MuteSync extends BmRunnable {
 
     private PlayerMuteStorage muteStorage = plugin.getPlayerMuteStorage();
@@ -40,7 +39,7 @@ public class MuteSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();
@@ -70,7 +69,7 @@ public class MuteSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

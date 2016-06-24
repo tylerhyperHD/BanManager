@@ -1,19 +1,17 @@
 package me.confuser.banmanager.runnables;
 
 import com.j256.ormlite.dao.CloseableIterator;
-import lombok.Getter;
-import me.confuser.banmanager.BanManager;
 import me.confuser.banmanager.data.IpBanData;
 import me.confuser.banmanager.data.IpBanRecord;
 import me.confuser.banmanager.data.IpMuteData;
 import me.confuser.banmanager.data.IpMuteRecord;
 import me.confuser.banmanager.storage.IpBanStorage;
 import me.confuser.banmanager.storage.IpMuteStorage;
-
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class IpSync extends BmRunnable {
-
     private IpBanStorage banStorage = plugin.getIpBanStorage();
     private IpMuteStorage muteStorage = plugin.getIpMuteStorage();
 
@@ -45,7 +43,7 @@ public class IpSync extends BmRunnable {
                 banStorage.addBan(ban);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();
@@ -71,7 +69,7 @@ public class IpSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();
@@ -96,7 +94,7 @@ public class IpSync extends BmRunnable {
                 muteStorage.addMute(mute);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();
@@ -122,7 +120,7 @@ public class IpSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

@@ -11,6 +11,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class UnmuteIpCommand extends BukkitCommand<BanManager> {
 
@@ -75,7 +76,7 @@ public class UnmuteIpCommand extends BukkitCommand<BanManager> {
                     unmuted = plugin.getIpMuteStorage().unmute(mute, actor, reason);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 

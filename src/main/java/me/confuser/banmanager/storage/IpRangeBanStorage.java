@@ -10,7 +10,6 @@ import com.j256.ormlite.table.TableUtils;
 import com.sk89q.guavabackport.collect.Range;
 import me.confuser.banmanager.BanManager;
 import me.confuser.banmanager.data.IpRangeBanData;
-import me.confuser.banmanager.data.IpRangeBanRecord;
 import me.confuser.banmanager.data.PlayerData;
 import me.confuser.banmanager.events.IpRangeBanEvent;
 import me.confuser.banmanager.events.IpRangeBannedEvent;
@@ -23,6 +22,7 @@ import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import me.confuser.banmanager.PluginLogger;
 
 public class IpRangeBanStorage extends BaseDaoImpl<IpRangeBanData, Integer> {
 
@@ -51,7 +51,7 @@ public class IpRangeBanStorage extends BaseDaoImpl<IpRangeBanData, Integer> {
 
         itr.close();
 
-        plugin.getLogger().info("Loaded " + bans.size() + " ip range bans into memory");
+        PluginLogger.info("Loaded " + bans.size() + " ip range bans into memory");
     }
 
     public ConcurrentHashMap<Range, IpRangeBanData> getBans() {

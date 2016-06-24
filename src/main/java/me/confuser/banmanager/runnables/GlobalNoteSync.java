@@ -5,9 +5,10 @@ import me.confuser.banmanager.data.PlayerNoteData;
 import me.confuser.banmanager.data.global.GlobalPlayerNoteData;
 import me.confuser.banmanager.storage.PlayerNoteStorage;
 import me.confuser.banmanager.storage.global.GlobalPlayerNoteStorage;
-
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class GlobalNoteSync extends BmRunnable {
 
     private GlobalPlayerNoteStorage noteStorage = plugin.getGlobalPlayerNoteStorage();
@@ -47,7 +48,7 @@ public class GlobalNoteSync extends BmRunnable {
                         }
                     }
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     create = false;
                 } finally {
                     if (notes != null) {
@@ -61,7 +62,7 @@ public class GlobalNoteSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

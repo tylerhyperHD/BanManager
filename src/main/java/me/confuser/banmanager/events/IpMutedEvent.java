@@ -3,6 +3,7 @@ package me.confuser.banmanager.events;
 import lombok.Getter;
 import me.confuser.banmanager.data.IpMuteData;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class IpMutedEvent extends SilentEvent {
 
     @Getter

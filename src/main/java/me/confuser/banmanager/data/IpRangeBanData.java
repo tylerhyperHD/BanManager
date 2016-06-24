@@ -6,6 +6,7 @@ import com.sk89q.guavabackport.collect.Range;
 import lombok.Getter;
 import me.confuser.banmanager.storage.mysql.ByteArray;
 
+@SuppressWarnings("FieldMayBeFinal")
 @DatabaseTable
 public class IpRangeBanData {
 

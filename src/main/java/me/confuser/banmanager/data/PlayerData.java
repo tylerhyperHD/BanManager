@@ -2,16 +2,13 @@ package me.confuser.banmanager.data;
 
 import java.net.InetAddress;
 import java.util.UUID;
-
 import lombok.Setter;
 import me.confuser.banmanager.storage.PlayerStorage;
 import me.confuser.banmanager.storage.mysql.ByteArray;
 import me.confuser.banmanager.util.IPUtils;
 import me.confuser.banmanager.util.UUIDUtils;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import lombok.Getter;

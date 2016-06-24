@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class MuteCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -120,7 +121,7 @@ public class MuteCommand extends AutoCompleteNameTabCommand<BanManager> {
                         actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
                     } catch (SQLException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {
@@ -141,7 +142,7 @@ public class MuteCommand extends AutoCompleteNameTabCommand<BanManager> {
                             plugin.getPlayerMuteStorage().unmute(mute, actor);
                         } catch (SQLException e) {
                             sender.sendMessage(Message.get("sender.error.exception").toString());
-                            e.printStackTrace();
+                            PluginLogger.warn(e);
                             return;
                         }
                     }
@@ -154,7 +155,7 @@ public class MuteCommand extends AutoCompleteNameTabCommand<BanManager> {
                     created = plugin.getPlayerMuteStorage().mute(mute, isSilent);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 

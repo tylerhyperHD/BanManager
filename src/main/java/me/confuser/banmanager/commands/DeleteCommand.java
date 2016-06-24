@@ -9,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import me.confuser.banmanager.PluginLogger;
 
 public class DeleteCommand extends BukkitCommand<BanManager> {
 
@@ -55,7 +56,7 @@ public class DeleteCommand extends BukkitCommand<BanManager> {
             }
         }
 
-        if (ids.size() == 0) {
+        if (ids.isEmpty()) {
             return false;
         }
 
@@ -93,7 +94,7 @@ public class DeleteCommand extends BukkitCommand<BanManager> {
                     }
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 

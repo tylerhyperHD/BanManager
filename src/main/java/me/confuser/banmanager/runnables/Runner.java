@@ -1,6 +1,7 @@
 package me.confuser.banmanager.runnables;
 
 import java.util.HashMap;
+import me.confuser.banmanager.PluginLogger;
 
 public class Runner implements Runnable {
 
@@ -30,7 +31,7 @@ public class Runner implements Runnable {
             try {
                 runner.run();
             } catch (Exception e) {
-                e.printStackTrace();
+                PluginLogger.warn(e);
             }
 
             runner.afterRun();

@@ -14,6 +14,7 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 import java.sql.SQLException;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class ChatListener extends Listeners<BanManager> {
 
@@ -45,7 +46,7 @@ public class ChatListener extends Listeners<BanManager> {
             try {
                 plugin.getPlayerMuteStorage().unmute(mute, plugin.getPlayerStorage().getConsole());
             } catch (SQLException e) {
-                e.printStackTrace();
+                PluginLogger.warn(e);
             }
             return;
         }
@@ -98,7 +99,7 @@ public class ChatListener extends Listeners<BanManager> {
             try {
                 plugin.getIpMuteStorage().unmute(mute, plugin.getPlayerStorage().getConsole());
             } catch (SQLException e) {
-                e.printStackTrace();
+                PluginLogger.warn(e);
             }
             return;
         }

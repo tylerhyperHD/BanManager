@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import me.confuser.banmanager.PluginLogger;
 
 public class PlayerBanStorage extends BaseDaoImpl<PlayerBanData, Integer> {
 
@@ -51,13 +52,13 @@ public class PlayerBanStorage extends BaseDaoImpl<PlayerBanData, Integer> {
             try {
                 bans.put(ban.getPlayer().getUUID(), ban);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to retrieve ban id " + ban.getId() + " due to missing player data");
+                PluginLogger.severe("Failed to retrieve ban id " + ban.getId() + " due to missing player data");
             }
         }
 
         itr.close();
 
-        plugin.getLogger().info("Loaded " + bans.size() + " bans into memory");
+        PluginLogger.info("Loaded " + bans.size() + " bans into memory");
     }
 
     public ConcurrentHashMap<UUID, PlayerBanData> getBans() {
@@ -73,6 +74,7 @@ public class PlayerBanStorage extends BaseDaoImpl<PlayerBanData, Integer> {
     }
 
     public PlayerBanData retrieveBan(UUID uuid) throws SQLException {
+        @SuppressWarnings("LocalVariableHidesMemberVariable")
         List<PlayerBanData> bans = queryForEq("player_id", UUIDUtils.toBytes(uuid));
 
         if (bans.isEmpty()) {
@@ -140,9 +142,9 @@ public class PlayerBanStorage extends BaseDaoImpl<PlayerBanData, Integer> {
             return false;
         }
 
-        return TransactionManager.callInTransaction(connectionSource,
-                new Callable<Boolean>() {
+        return TransactionManager.callInTransaction(connectionSource, new Callable<Boolean>() {
 
+            @Override
             public Boolean call() throws Exception {
                 delete(ban);
                 bans.remove(ban.getPlayer().getUUID());
@@ -191,7 +193,7 @@ public class PlayerBanStorage extends BaseDaoImpl<PlayerBanData, Integer> {
 
             query.leftJoin(playerQuery);
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
             return players;
         }
 
@@ -203,7 +205,7 @@ public class PlayerBanStorage extends BaseDaoImpl<PlayerBanData, Integer> {
                 players.add(itr.next().getPlayer());
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

@@ -4,6 +4,7 @@ import lombok.Getter;
 import me.confuser.banmanager.data.PlayerData;
 import me.confuser.banmanager.data.PlayerMuteData;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class PlayerUnmuteEvent extends CustomCancellableEvent {
 
     @Getter

@@ -3,6 +3,7 @@ package me.confuser.banmanager.events;
 import lombok.Getter;
 import me.confuser.banmanager.data.IpBanData;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class IpBanEvent extends SilentCancellableEvent {
 
     @Getter

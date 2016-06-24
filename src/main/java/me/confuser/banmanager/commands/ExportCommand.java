@@ -14,6 +14,7 @@ import org.bukkit.command.CommandSender;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import me.confuser.banmanager.PluginLogger;
 
 public class ExportCommand extends BukkitCommand<BanManager> {
 
@@ -58,7 +59,7 @@ public class ExportCommand extends BukkitCommand<BanManager> {
                         exportPlayers(fileName);
                     } catch (IOException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else if (args[0].startsWith("ip")) {
@@ -73,7 +74,7 @@ public class ExportCommand extends BukkitCommand<BanManager> {
                         exportIps(fileName);
                     } catch (IOException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {

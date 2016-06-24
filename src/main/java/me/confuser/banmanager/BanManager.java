@@ -14,7 +14,6 @@ import me.confuser.banmanager.storage.*;
 import me.confuser.banmanager.storage.global.*;
 import me.confuser.banmanager.storage.mysql.MySQLDatabase;
 import me.confuser.banmanager.util.DateUtils;
-import me.confuser.banmanager.util.UpdateUtils;
 import me.confuser.bukkitutil.BukkitPlugin;
 import org.mcstats.MetricsLite;
 
@@ -402,28 +401,7 @@ public class BanManager extends BukkitPlugin {
         setupAsyncRunnable((schedulesConfig.getSchedule("saveLastChecked") * 20L) + 1L, new SaveLastChecked());
 
         // Purge
-        getServer().getScheduler().runTaskAsynchronously(plugin, new Purge());
-
-        // TODO Refactor
-        if (!getConfiguration().isCheckForUpdates()) {
-            return;
-        }
-
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-            @Override
-            public void run() {
-                if (UpdateUtils.isUpdateAvailable(getFile())) {
-                    plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
-
-                        @Override
-                        public void run() {
-                            new UpdateListener().register();
-                        }
-                    });
-                }
-            }
-        });
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Purge());
     }
 
     private void setupAsyncRunnable(long length, Runnable runnable) {

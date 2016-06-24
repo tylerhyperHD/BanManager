@@ -18,6 +18,7 @@ import org.bukkit.permissions.Permissible;
 
 import java.sql.SQLException;
 import java.util.*;
+import me.confuser.banmanager.PluginLogger;
 
 public class CommandUtils {
 
@@ -119,7 +120,7 @@ public class CommandUtils {
 
     public static void handlePrivateNotes(PlayerData player, PlayerData actor, Reason reason) {
         if (plugin.getConfiguration().isCreateNoteReasons()) {
-            if (reason.getNotes().size() == 0) {
+            if (reason.getNotes().isEmpty()) {
                 return;
             }
         }
@@ -128,7 +129,7 @@ public class CommandUtils {
             try {
                 plugin.getPlayerNoteStorage().create(new PlayerNoteData(player, actor, note));
             } catch (SQLException e) {
-                e.printStackTrace();
+                PluginLogger.warn(e);
             }
         }
 
@@ -147,7 +148,7 @@ public class CommandUtils {
                 player = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(UUID.fromString(playerName)));
             } catch (SQLException e) {
                 sender.sendMessage(Message.get("sender.error.exception").toString());
-                e.printStackTrace();
+                PluginLogger.warn(e);
             }
         } else {
             player = plugin.getPlayerStorage().retrieve(playerName, true);
@@ -164,7 +165,7 @@ public class CommandUtils {
                 actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
             } catch (SQLException e) {
                 sender.sendMessage(Message.get("sender.error.exception").toString());
-                e.printStackTrace();
+                PluginLogger.warn(e);
             }
         } else {
             actor = plugin.getPlayerStorage().getConsole();

@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import me.confuser.banmanager.PluginLogger;
 
 public class InfoCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -77,7 +78,7 @@ public class InfoCommand extends AutoCompleteNameTabCommand<BanManager> {
                         playerInfo(sender, search, parser, finalArgs);
                     } catch (SQLException e) {
                         sender.sendMessage(Message.getString("sender.error.exception"));
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 }/* else {
@@ -164,7 +165,7 @@ public class InfoCommand extends AutoCompleteNameTabCommand<BanManager> {
                     results = plugin.getHistoryStorage().getAll(player, parser);
                 }
 
-                if (results == null || results.size() == 0) {
+                if (results == null || results.isEmpty()) {
                     Message.get("info.history.noResults").sendTo(sender);
                     return;
                 }
@@ -341,7 +342,7 @@ public class InfoCommand extends AutoCompleteNameTabCommand<BanManager> {
                         .toString());
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (iterator != null) {
                 iterator.closeQuietly();

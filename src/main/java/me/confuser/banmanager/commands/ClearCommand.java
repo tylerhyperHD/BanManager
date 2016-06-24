@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class ClearCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -126,7 +127,7 @@ public class ClearCommand extends AutoCompleteNameTabCommand<BanManager> {
                         builder.delete();
                     } catch (SQLException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
 

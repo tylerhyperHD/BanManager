@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class ReportCommand extends MultiCommandHandler<BanManager> {
 
@@ -114,7 +115,7 @@ public class ReportCommand extends MultiCommandHandler<BanManager> {
                     }
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 
@@ -130,7 +131,7 @@ public class ReportCommand extends MultiCommandHandler<BanManager> {
                     plugin.getPlayerReportStorage().report(report, isSilent);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 }
 
             }

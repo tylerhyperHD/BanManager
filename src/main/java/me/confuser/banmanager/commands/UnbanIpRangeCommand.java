@@ -15,6 +15,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class UnbanIpRangeCommand extends BukkitCommand<BanManager> {
 
@@ -108,7 +109,7 @@ public class UnbanIpRangeCommand extends BukkitCommand<BanManager> {
                         actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
                     } catch (SQLException e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {
@@ -121,7 +122,7 @@ public class UnbanIpRangeCommand extends BukkitCommand<BanManager> {
                     unbanned = plugin.getIpRangeBanStorage().unban(ban, actor, reason);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 

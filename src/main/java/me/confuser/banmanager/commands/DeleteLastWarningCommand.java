@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class DeleteLastWarningCommand extends AutoCompleteNameTabCommand<BanManager> {
 
@@ -44,7 +45,7 @@ public class DeleteLastWarningCommand extends AutoCompleteNameTabCommand<BanMana
                         player = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(UUID.fromString(playerName)));
                     } catch (Exception e) {
                         sender.sendMessage(Message.get("sender.error.exception").toString());
-                        e.printStackTrace();
+                        PluginLogger.warn(e);
                         return;
                     }
                 } else {
@@ -60,7 +61,7 @@ public class DeleteLastWarningCommand extends AutoCompleteNameTabCommand<BanMana
                 try {
                     updated = plugin.getPlayerWarnStorage().deleteRecent(player);
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                 }
 
                 if (updated == 0) {

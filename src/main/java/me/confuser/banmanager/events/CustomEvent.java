@@ -7,6 +7,7 @@ public abstract class CustomEvent extends Event {
 
     private static final HandlerList handlers = new HandlerList();
 
+    @Override
     public HandlerList getHandlers() {
         return handlers;
     }

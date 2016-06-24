@@ -26,9 +26,11 @@ public class DateUtils {
             TimeUnit.SECONDS.toSeconds(1));
     private static final List<String> timesString = Arrays
             .asList("year", "month", "week", "day", "hour", "minute", "second");
+    @SuppressWarnings("FieldMayBeFinal")
     private static BanManager plugin = BanManager.getPlugin();
     @Getter
     private static long timeDiff = 0;
+    @SuppressWarnings("FieldMayBeFinal")
     private static Pattern timePattern = Pattern
             .compile("(?:([0-9]+)\\s*y[a-z]*[,\\s]*)?" + "(?:([0-9]+)\\s*mo[a-z]*[,\\s]*)?" + "(?:([0-9]+)\\s*w[a-z]*[,\\s]*)?" + "(?:([0-9]+)\\s*d[a-z]*[,\\s]*)?" + "(?:([0-9]+)\\s*h[a-z]*[,\\s]*)?" + "(?:([0-9]+)\\s*m[a-z]*[,\\s]*)?" + "(?:([0-9]+)\\s*(?:s[a-z]*)?)?", Pattern.CASE_INSENSITIVE);
 

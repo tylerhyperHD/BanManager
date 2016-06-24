@@ -17,6 +17,7 @@ import org.bukkit.Bukkit;
 import java.sql.SQLException;
 import java.util.UUID;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class PlayerNoteStorage extends BaseDaoImpl<PlayerNoteData, Integer> {
 
     private BanManager plugin = BanManager.getPlugin();

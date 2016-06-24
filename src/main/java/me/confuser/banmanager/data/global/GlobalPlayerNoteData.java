@@ -8,10 +8,10 @@ import me.confuser.banmanager.data.PlayerNoteData;
 import me.confuser.banmanager.storage.PlayerStorage;
 import me.confuser.banmanager.storage.mysql.ByteArray;
 import me.confuser.banmanager.util.UUIDUtils;
-
 import java.sql.SQLException;
 import java.util.UUID;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class GlobalPlayerNoteData {
 
     @DatabaseField(generatedId = true)

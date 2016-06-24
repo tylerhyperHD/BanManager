@@ -8,7 +8,9 @@ import me.confuser.bukkitutil.Message;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class BanSync extends BmRunnable {
 
     private PlayerBanStorage banStorage = plugin.getPlayerBanStorage();
@@ -60,7 +62,7 @@ public class BanSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();
@@ -90,7 +92,7 @@ public class BanSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

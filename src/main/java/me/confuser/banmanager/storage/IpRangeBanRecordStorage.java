@@ -14,6 +14,7 @@ import me.confuser.banmanager.data.PlayerData;
 import me.confuser.banmanager.util.DateUtils;
 
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
 public class IpRangeBanRecordStorage extends BaseDaoImpl<IpRangeBanRecord, Integer> {
 

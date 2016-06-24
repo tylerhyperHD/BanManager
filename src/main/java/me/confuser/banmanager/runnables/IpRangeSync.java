@@ -1,16 +1,17 @@
 package me.confuser.banmanager.runnables;
 
 import com.j256.ormlite.dao.CloseableIterator;
-import lombok.Getter;
 import me.confuser.banmanager.BanManager;
 import me.confuser.banmanager.data.IpRangeBanData;
 import me.confuser.banmanager.data.IpRangeBanRecord;
 import me.confuser.banmanager.storage.IpRangeBanStorage;
-
 import java.sql.SQLException;
+import me.confuser.banmanager.PluginLogger;
 
+@SuppressWarnings("FieldMayBeFinal")
 public class IpRangeSync extends BmRunnable {
 
+    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     private BanManager plugin = BanManager.getPlugin();
     private IpRangeBanStorage banStorage = plugin.getIpRangeBanStorage();
 
@@ -40,7 +41,7 @@ public class IpRangeSync extends BmRunnable {
                 banStorage.addBan(ban);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();
@@ -65,7 +66,7 @@ public class IpRangeSync extends BmRunnable {
 
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         } finally {
             if (itr != null) {
                 itr.closeQuietly();

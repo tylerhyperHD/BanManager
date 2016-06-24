@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class UnmuteCommand extends BukkitCommand<BanManager> implements TabCompleter {
 
@@ -92,7 +93,7 @@ public class UnmuteCommand extends BukkitCommand<BanManager> implements TabCompl
                     unmuted = plugin.getPlayerMuteStorage().unmute(mute, actor, reason);
                 } catch (SQLException e) {
                     sender.sendMessage(Message.get("sender.error.exception").toString());
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     return;
                 }
 

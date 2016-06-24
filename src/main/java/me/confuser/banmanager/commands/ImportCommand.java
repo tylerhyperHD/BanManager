@@ -23,6 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.UUID;
+import me.confuser.banmanager.PluginLogger;
 
 public class ImportCommand extends BukkitCommand<BanManager> {
 
@@ -119,7 +120,7 @@ public class ImportCommand extends BukkitCommand<BanManager> {
                             try {
                                 created = dateFormat.parse(reader.nextString()).getTime() / 1000L;
                             } catch (ParseException e) {
-                                e.printStackTrace();
+                                PluginLogger.warn(e);
 
                                 continue;
                             }
@@ -146,7 +147,7 @@ public class ImportCommand extends BukkitCommand<BanManager> {
                                 try {
                                     expires = dateFormat.parse(expiresStr).getTime() / 1000L;
                                 } catch (ParseException e) {
-                                    e.printStackTrace();
+                                    PluginLogger.warn(e);
 
                                     continue;
                                 }
@@ -165,7 +166,7 @@ public class ImportCommand extends BukkitCommand<BanManager> {
                 }
 
                 if (!isValidSource(name)) {
-                    plugin.getLogger().warning("Invalid name " + name + " skipping its import");
+                    PluginLogger.warn("Invalid name " + name + " skipping its import");
                     continue;
                 }
 
@@ -185,7 +186,7 @@ public class ImportCommand extends BukkitCommand<BanManager> {
                 try {
                     plugin.getPlayerBanStorage().create(ban);
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     continue;
                 }
             }
@@ -193,10 +194,8 @@ public class ImportCommand extends BukkitCommand<BanManager> {
             reader.endArray();
 
             reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (IOException | SQLException e) {
+            PluginLogger.warn(e);
         }
 
         importInProgress = false;
@@ -232,7 +231,7 @@ public class ImportCommand extends BukkitCommand<BanManager> {
                             try {
                                 created = dateFormat.parse(reader.nextString()).getTime() / 1000L;
                             } catch (ParseException e) {
-                                e.printStackTrace();
+                                PluginLogger.warn(e);
 
                                 continue;
                             }
@@ -259,7 +258,7 @@ public class ImportCommand extends BukkitCommand<BanManager> {
                                 try {
                                     created = dateFormat.parse(reader.nextString()).getTime() / 1000L;
                                 } catch (ParseException e) {
-                                    e.printStackTrace();
+                                    PluginLogger.warn(e);
 
                                     continue;
                                 }
@@ -291,7 +290,7 @@ public class ImportCommand extends BukkitCommand<BanManager> {
                 try {
                     plugin.getIpBanStorage().create(ban);
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    PluginLogger.warn(e);
                     continue;
                 }
             }
@@ -300,7 +299,7 @@ public class ImportCommand extends BukkitCommand<BanManager> {
 
             reader.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            PluginLogger.warn(e);
         }
 
         importInProgress = false;
