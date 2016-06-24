@@ -14,79 +14,79 @@ import java.util.UUID;
 
 public class GlobalIpBanData {
 
-  @DatabaseField(generatedId = true)
-  @Getter
-  private int id;
+    @DatabaseField(generatedId = true)
+    @Getter
+    private int id;
 
-  @Getter
-  @DatabaseField(canBeNull = false, columnDefinition = "INT UNSIGNED NOT NULL")
-  private long ip;
+    @Getter
+    @DatabaseField(canBeNull = false, columnDefinition = "INT UNSIGNED NOT NULL")
+    private long ip;
 
-  @DatabaseField(canBeNull = false)
-  @Getter
-  private String reason;
+    @DatabaseField(canBeNull = false)
+    @Getter
+    private String reason;
 
-  @DatabaseField(columnName = "actorUuid", canBeNull = false, index = true, persisterClass = ByteArray.class, columnDefinition = "BINARY(16) NOT NULL")
-  private byte[] actorUuidBytes;
+    @DatabaseField(columnName = "actorUuid", canBeNull = false, index = true, persisterClass = ByteArray.class, columnDefinition = "BINARY(16) NOT NULL")
+    private byte[] actorUuidBytes;
 
-  @DatabaseField(canBeNull = false, width = 16, columnDefinition = "VARCHAR(16) NOT NULL")
-  @Getter
-  private String actorName;
+    @DatabaseField(canBeNull = false, width = 16, columnDefinition = "VARCHAR(16) NOT NULL")
+    @Getter
+    private String actorName;
 
-  // Should always be database time
-  @DatabaseField(index = true, columnDefinition = "INT(10) NOT NULL")
-  @Getter
-  private long created = System.currentTimeMillis() / 1000L;
+    // Should always be database time
+    @DatabaseField(index = true, columnDefinition = "INT(10) NOT NULL")
+    @Getter
+    private long created = System.currentTimeMillis() / 1000L;
 
-  @DatabaseField(index = true, columnDefinition = "INT(10) NOT NULL")
-  @Getter
-  private long expires = 0;
+    @DatabaseField(index = true, columnDefinition = "INT(10) NOT NULL")
+    @Getter
+    private long expires = 0;
 
-  private UUID actorUUID;
+    private UUID actorUUID;
 
-  private PlayerStorage playerStorage = BanManager.getPlugin().getPlayerStorage();
+    private PlayerStorage playerStorage = BanManager.getPlugin().getPlayerStorage();
 
-  GlobalIpBanData() {
+    GlobalIpBanData() {
 
-  }
-
-  public GlobalIpBanData(long ip, PlayerData actor, String reason) {
-    this.ip = ip;
-    this.reason = reason;
-    this.actorUuidBytes = actor.getId();
-    this.actorName = actor.getName();
-  }
-
-  public GlobalIpBanData(long ip, PlayerData actor, String reason, long expires) {
-    this(ip, actor, reason);
-
-    this.expires = expires;
-  }
-
-  // Only use for imports!
-  public GlobalIpBanData(long ip, PlayerData actor, String reason, long expires, long created) {
-    this(ip, actor, reason, expires);
-
-    this.created = created;
-  }
-
-  public boolean hasExpired() {
-    return getExpires() != 0 && getExpires() <= (System.currentTimeMillis() / 1000L);
-  }
-
-  public UUID getActorUUID() {
-    if (actorUUID == null) {
-      actorUUID = UUIDUtils.fromBytes(actorUuidBytes);
     }
 
-    return actorUUID;
-  }
+    public GlobalIpBanData(long ip, PlayerData actor, String reason) {
+        this.ip = ip;
+        this.reason = reason;
+        this.actorUuidBytes = actor.getId();
+        this.actorName = actor.getName();
+    }
 
-  public PlayerData getActor() throws SQLException {
-    return playerStorage.createIfNotExists(getActorUUID(), getActorName());
-  }
+    public GlobalIpBanData(long ip, PlayerData actor, String reason, long expires) {
+        this(ip, actor, reason);
 
-  public IpBanData toLocal() throws SQLException {
-    return new IpBanData(ip, getActor(), reason, expires, created);
-  }
+        this.expires = expires;
+    }
+
+    // Only use for imports!
+    public GlobalIpBanData(long ip, PlayerData actor, String reason, long expires, long created) {
+        this(ip, actor, reason, expires);
+
+        this.created = created;
+    }
+
+    public boolean hasExpired() {
+        return getExpires() != 0 && getExpires() <= (System.currentTimeMillis() / 1000L);
+    }
+
+    public UUID getActorUUID() {
+        if (actorUUID == null) {
+            actorUUID = UUIDUtils.fromBytes(actorUuidBytes);
+        }
+
+        return actorUUID;
+    }
+
+    public PlayerData getActor() throws SQLException {
+        return playerStorage.createIfNotExists(getActorUUID(), getActorName());
+    }
+
+    public IpBanData toLocal() throws SQLException {
+        return new IpBanData(ip, getActor(), reason, expires, created);
+    }
 }

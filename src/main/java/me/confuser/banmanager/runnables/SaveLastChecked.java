@@ -4,11 +4,11 @@ import me.confuser.banmanager.BanManager;
 
 public class SaveLastChecked implements Runnable {
 
-      private BanManager plugin = BanManager.getPlugin();
+    private BanManager plugin = BanManager.getPlugin();
 
-      @Override
-      public void run() {
-            plugin.getSchedulesConfig().save();
-      }
+    @Override
+    public void run() {
+        plugin.getSchedulesConfig().save();
+    }
 
 }

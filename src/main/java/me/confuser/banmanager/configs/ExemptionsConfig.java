@@ -10,58 +10,64 @@ import java.util.*;
 
 public class ExemptionsConfig extends Config<BanManager> {
 
-  private static ArrayList<String> types = new ArrayList<String>() {
+    private static ArrayList<String> types = new ArrayList<String>() {
 
-    {
-      add("ban");
-      add("tempban");
-      add("mute");
-      add("tempmute");
-      add("warn");
-      add("tempwarn");
+        {
+            add("ban");
+            add("tempban");
+            add("mute");
+            add("tempmute");
+            add("warn");
+            add("tempwarn");
+        }
+    };
+    private HashMap<UUID, PlayerExemptionsData> players;
+
+    public ExemptionsConfig() {
+        super("exemptions.yml");
     }
-  };
-  private HashMap<UUID, PlayerExemptionsData> players;
 
-  public ExemptionsConfig() {
-    super("exemptions.yml");
-  }
+    @Override
+    public void afterLoad() {
+        players = new HashMap<>();
+        Set<String> keys = conf.getKeys(false);
 
-  @Override
-  public void afterLoad() {
-    players =  new HashMap<>();
-    Set<String> keys = conf.getKeys(false);
+        if (keys == null || keys.size() == 0) {
+            return;
+        }
 
-    if (keys == null || keys.size() == 0) return;
+        for (String uuidStr : keys) {
+            UUID uuid;
+            try {
+                uuid = UUID.fromString(uuidStr);
+            } catch (IllegalArgumentException e) {
+                continue;
+            }
 
-    for (String uuidStr : keys) {
-      UUID uuid;
-      try {
-        uuid = UUID.fromString(uuidStr);
-      } catch (IllegalArgumentException e) {
-        continue;
-      }
+            ConfigurationSection exemptionsSection = conf.getConfigurationSection(uuidStr);
+            HashSet<String> exemptions = new HashSet<>();
 
-      ConfigurationSection exemptionsSection = conf.getConfigurationSection(uuidStr);
-      HashSet<String> exemptions = new HashSet<>();
+            for (String type : types) {
+                if (exemptionsSection.getBoolean(type, false)) {
+                    exemptions.add(type);
+                }
+            }
 
-      for (String type : types) {
-        if (exemptionsSection.getBoolean(type, false)) exemptions.add(type);
-      }
-
-      players.put(uuid, new PlayerExemptionsData(exemptions));
+            players.put(uuid, new PlayerExemptionsData(exemptions));
+        }
     }
-  }
 
-  @Override
-  public void onSave() {
-  }
+    @Override
+    public void onSave() {
+    }
 
-  public boolean isExempt(PlayerData player, String type) {
-    PlayerExemptionsData exemptionsData = players.get(player.getUUID());
+    public boolean isExempt(PlayerData player, String type) {
+        PlayerExemptionsData exemptionsData = players.get(player.getUUID());
 
-    if (exemptionsData == null) return false;
+        if (exemptionsData == null) {
+            return false;
+        }
 
-    return exemptionsData.isExempt(type);
-  }
+        return exemptionsData.isExempt(type);
+    }
 }

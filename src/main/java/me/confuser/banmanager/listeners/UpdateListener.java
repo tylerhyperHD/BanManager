@@ -10,11 +10,13 @@ import org.bukkit.event.player.PlayerJoinEvent;
 
 public class UpdateListener extends Listeners<BanManager> {
 
-  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-  public void onPlayerJoin(PlayerJoinEvent event) {
-    if (!event.getPlayer().hasPermission("bm.notify.update")) return;
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        if (!event.getPlayer().hasPermission("bm.notify.update")) {
+            return;
+        }
 
-    Message.get("update.notify").sendTo(event.getPlayer());
-    event.getPlayer().sendMessage(ChatColor.GOLD + "http://dev.bukkit.org/bukkit-plugins/ban-management/");
-  }
+        Message.get("update.notify").sendTo(event.getPlayer());
+        event.getPlayer().sendMessage(ChatColor.GOLD + "http://dev.bukkit.org/bukkit-plugins/ban-management/");
+    }
 }

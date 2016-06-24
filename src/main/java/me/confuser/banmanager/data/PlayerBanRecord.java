@@ -8,73 +8,73 @@ import me.confuser.banmanager.storage.mysql.ByteArray;
 @DatabaseTable
 public class PlayerBanRecord {
 
-  @DatabaseField(generatedId = true)
-  @Getter
-  private int id;
+    @DatabaseField(generatedId = true)
+    @Getter
+    private int id;
 
-  @DatabaseField(canBeNull = false, foreign = true, persisterClass = ByteArray.class, columnDefinition = "BINARY(16) NOT NULL")
-  @Getter
-  private PlayerData player;
+    @DatabaseField(canBeNull = false, foreign = true, persisterClass = ByteArray.class, columnDefinition = "BINARY(16) NOT NULL")
+    @Getter
+    private PlayerData player;
 
-  @DatabaseField(canBeNull = false)
-  @Getter
-  private String reason;
+    @DatabaseField(canBeNull = false)
+    @Getter
+    private String reason;
 
-  @DatabaseField(canBeNull = false)
-  @Getter
-  private long expired;
+    @DatabaseField(canBeNull = false)
+    @Getter
+    private long expired;
 
-  @DatabaseField(canBeNull = false, foreign = true, foreignAutoRefresh = true, persisterClass = ByteArray.class, columnDefinition = "BINARY(16) NOT NULL")
-  @Getter
-  private PlayerData actor;
+    @DatabaseField(canBeNull = false, foreign = true, foreignAutoRefresh = true, persisterClass = ByteArray.class, columnDefinition = "BINARY(16) NOT NULL")
+    @Getter
+    private PlayerData actor;
 
-  @Getter
-  @DatabaseField(canBeNull = false, foreign = true, foreignAutoRefresh = true, persisterClass = ByteArray.class, columnDefinition = "BINARY(16) NOT NULL")
-  private PlayerData pastActor;
+    @Getter
+    @DatabaseField(canBeNull = false, foreign = true, foreignAutoRefresh = true, persisterClass = ByteArray.class, columnDefinition = "BINARY(16) NOT NULL")
+    private PlayerData pastActor;
 
-  @DatabaseField(canBeNull = false, columnDefinition = "INT(10) NOT NULL")
-  @Getter
-  private long pastCreated;
+    @DatabaseField(canBeNull = false, columnDefinition = "INT(10) NOT NULL")
+    @Getter
+    private long pastCreated;
 
-  @DatabaseField(index = true, canBeNull = false, columnDefinition = "INT(10) NOT NULL")
-  @Getter
-  private long created = System.currentTimeMillis() / 1000L;
+    @DatabaseField(index = true, canBeNull = false, columnDefinition = "INT(10) NOT NULL")
+    @Getter
+    private long created = System.currentTimeMillis() / 1000L;
 
-  @DatabaseField(canBeNull = false)
-  @Getter
-  private String createdReason;
+    @DatabaseField(canBeNull = false)
+    @Getter
+    private String createdReason;
 
-  PlayerBanRecord() {
+    PlayerBanRecord() {
 
-  }
+    }
 
-  public PlayerBanRecord(PlayerBanData ban, PlayerData actor, String reason) {
-    player = ban.getPlayer();
-    expired = ban.getExpires();
-    pastActor = ban.getActor();
-    pastCreated = ban.getCreated();
-    createdReason = reason;
+    public PlayerBanRecord(PlayerBanData ban, PlayerData actor, String reason) {
+        player = ban.getPlayer();
+        expired = ban.getExpires();
+        pastActor = ban.getActor();
+        pastCreated = ban.getCreated();
+        createdReason = reason;
 
-    this.reason = ban.getReason();
-    this.actor = actor;
-  }
+        this.reason = ban.getReason();
+        this.actor = actor;
+    }
 
-  public PlayerBanRecord(PlayerBanData ban, PlayerData actor, long created) {
-    player = ban.getPlayer();
-    reason = ban.getReason();
-    expired = ban.getExpires();
-    pastActor = ban.getActor();
-    pastCreated = ban.getCreated();
+    public PlayerBanRecord(PlayerBanData ban, PlayerData actor, long created) {
+        player = ban.getPlayer();
+        reason = ban.getReason();
+        expired = ban.getExpires();
+        pastActor = ban.getActor();
+        pastCreated = ban.getCreated();
 
-    this.actor = actor;
-    this.created = created;
-  }
+        this.actor = actor;
+        this.created = created;
+    }
 
-  public boolean equalsBan(PlayerBanData ban) {
-    return ban.getReason().equals(this.reason)
-            && ban.getExpires() == expired
-            && ban.getCreated() == this.pastCreated
-            && ban.getPlayer().getUUID().equals(this.getPlayer().getUUID())
-            && ban.getActor().getUUID().equals(this.pastActor.getUUID());
-  }
+    public boolean equalsBan(PlayerBanData ban) {
+        return ban.getReason().equals(this.reason)
+                && ban.getExpires() == expired
+                && ban.getCreated() == this.pastCreated
+                && ban.getPlayer().getUUID().equals(this.getPlayer().getUUID())
+                && ban.getActor().getUUID().equals(this.pastActor.getUUID());
+    }
 }

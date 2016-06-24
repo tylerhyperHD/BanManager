@@ -18,131 +18,133 @@ import java.sql.SQLException;
 
 public class UnbanIpRangeCommand extends BukkitCommand<BanManager> {
 
-  public UnbanIpRangeCommand() {
-    super("unbaniprange");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
-    if (args.length < 1) {
-      return false;
+    public UnbanIpRangeCommand() {
+        super("unbaniprange");
     }
 
-    if (CommandUtils.isValidNameDelimiter(args[0])) {
-      CommandUtils.handleMultipleNames(sender, commandName, args);
-      return true;
-    }
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
+        if (args.length < 1) {
+            return false;
+        }
 
-    final String ipStr = args[0];
-    long[] range = new long[2];
-    final boolean isName;
+        if (CommandUtils.isValidNameDelimiter(args[0])) {
+            CommandUtils.handleMultipleNames(sender, commandName, args);
+            return true;
+        }
 
-    if (ipStr.contains("*")) {
-      // Simple wildcard logic
-      range = IPUtils.getRangeFromWildcard(ipStr);
-      isName = false;
-    } else if (ipStr.contains("/")) {
-      // cidr notation
-      range = IPUtils.getRangeFromCidrNotation(ipStr);
-      isName = false;
-    } else if (InetAddresses.isInetAddress(ipStr)) {
-      range[0] = IPUtils.toLong(ipStr);
-      range[1] = range[0];
-      isName = false;
-    } else if (ipStr.length() <= 16) {
-      isName = true;
-    } else {
-      Message message = Message.get("sender.error.invalidIp");
-      message.set("ip", ipStr);
-
-      sender.sendMessage(message.toString());
-      return true;
-    }
-
-    if (!isName && range == null) {
-      Message.get("baniprange.error.invalid").sendTo(sender);
-      return true;
-    }
-
-    final long[] ranges = range;
-    final String reason = args.length > 1 ? CommandUtils.getReason(1, args).getMessage() : "";
-
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
+        final String ipStr = args[0];
         long[] range = new long[2];
+        final boolean isName;
 
-        if (isName) {
-          PlayerData player = plugin.getPlayerStorage().retrieve(ipStr, false);
-          if (player == null) {
-            sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr)
-                                      .toString());
-            return;
-          }
-
-          range[0] = player.getIp();
-          range[1] = player.getIp();
+        if (ipStr.contains("*")) {
+            // Simple wildcard logic
+            range = IPUtils.getRangeFromWildcard(ipStr);
+            isName = false;
+        } else if (ipStr.contains("/")) {
+            // cidr notation
+            range = IPUtils.getRangeFromCidrNotation(ipStr);
+            isName = false;
+        } else if (InetAddresses.isInetAddress(ipStr)) {
+            range[0] = IPUtils.toLong(ipStr);
+            range[1] = range[0];
+            isName = false;
+        } else if (ipStr.length() <= 16) {
+            isName = true;
         } else {
-          range = ranges;
+            Message message = Message.get("sender.error.invalidIp");
+            message.set("ip", ipStr);
+
+            sender.sendMessage(message.toString());
+            return true;
         }
 
-        if (!plugin.getIpRangeBanStorage().isBanned(range[0]) && !plugin.getIpRangeBanStorage().isBanned(range[1])) {
-          Message message = Message.get("unbanip.error.noExists");
-          message.set("ip", ipStr);
-
-          sender.sendMessage(message.toString());
-          return;
+        if (!isName && range == null) {
+            Message.get("baniprange.error.invalid").sendTo(sender);
+            return true;
         }
 
-        IpRangeBanData ban = plugin.getIpRangeBanStorage().getBan(range[0]);
+        final long[] ranges = range;
+        final String reason = args.length > 1 ? CommandUtils.getReason(1, args).getMessage() : "";
 
-        if (ban == null) ban = plugin.getIpRangeBanStorage().getBan(range[1]);
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 
-        PlayerData actor;
+            @Override
+            public void run() {
+                long[] range = new long[2];
 
-        if (sender instanceof Player) {
-          try {
-            actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
-          } catch (SQLException e) {
-            sender.sendMessage(Message.get("sender.error.exception").toString());
-            e.printStackTrace();
-            return;
-          }
-        } else {
-          actor = plugin.getPlayerStorage().getConsole();
-        }
+                if (isName) {
+                    PlayerData player = plugin.getPlayerStorage().retrieve(ipStr, false);
+                    if (player == null) {
+                        sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr)
+                                .toString());
+                        return;
+                    }
 
-        boolean unbanned;
+                    range[0] = player.getIp();
+                    range[1] = player.getIp();
+                } else {
+                    range = ranges;
+                }
 
-        try {
-          unbanned = plugin.getIpRangeBanStorage().unban(ban, actor, reason);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.get("sender.error.exception").toString());
-          e.printStackTrace();
-          return;
-        }
+                if (!plugin.getIpRangeBanStorage().isBanned(range[0]) && !plugin.getIpRangeBanStorage().isBanned(range[1])) {
+                    Message message = Message.get("unbanip.error.noExists");
+                    message.set("ip", ipStr);
 
-        if (!unbanned) {
-          return;
-        }
+                    sender.sendMessage(message.toString());
+                    return;
+                }
 
-        Message message = Message.get("unbaniprange.notify");
-        message
-                .set("from", IPUtils.toString(ban.getFromIp()))
-                .set("to", IPUtils.toString(ban.getToIp()))
-                .set("actor", actor.getName())
-                .set("reason", reason);
+                IpRangeBanData ban = plugin.getIpRangeBanStorage().getBan(range[0]);
 
-        if (!sender.hasPermission("bm.notify.unbaniprange")) {
-          message.sendTo(sender);
-        }
+                if (ban == null) {
+                    ban = plugin.getIpRangeBanStorage().getBan(range[1]);
+                }
 
-        CommandUtils.broadcast(message.toString(), "bm.notify.unbaniprange");
-      }
+                PlayerData actor;
 
-    });
+                if (sender instanceof Player) {
+                    try {
+                        actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
+                    } catch (SQLException e) {
+                        sender.sendMessage(Message.get("sender.error.exception").toString());
+                        e.printStackTrace();
+                        return;
+                    }
+                } else {
+                    actor = plugin.getPlayerStorage().getConsole();
+                }
 
-    return true;
-  }
+                boolean unbanned;
+
+                try {
+                    unbanned = plugin.getIpRangeBanStorage().unban(ban, actor, reason);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.get("sender.error.exception").toString());
+                    e.printStackTrace();
+                    return;
+                }
+
+                if (!unbanned) {
+                    return;
+                }
+
+                Message message = Message.get("unbaniprange.notify");
+                message
+                        .set("from", IPUtils.toString(ban.getFromIp()))
+                        .set("to", IPUtils.toString(ban.getToIp()))
+                        .set("actor", actor.getName())
+                        .set("reason", reason);
+
+                if (!sender.hasPermission("bm.notify.unbaniprange")) {
+                    message.sendTo(sender);
+                }
+
+                CommandUtils.broadcast(message.toString(), "bm.notify.unbaniprange");
+            }
+
+        });
+
+        return true;
+    }
 }

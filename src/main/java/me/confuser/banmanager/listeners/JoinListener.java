@@ -28,439 +28,466 @@ import java.util.UUID;
 
 public class JoinListener extends Listeners<BanManager> {
 
-  @EventHandler(priority = EventPriority.HIGHEST)
-  public void banCheck(final AsyncPlayerPreLoginEvent event) {
-    if (plugin.getConfiguration().isCheckOnJoin()) {
-      // Check for new bans/mutes
-      if (!plugin.getIpBanStorage().isBanned(event.getAddress())) {
-        try {
-          IpBanData ban = plugin.getIpBanStorage().retrieveBan(IPUtils.toLong(event.getAddress()));
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void banCheck(final AsyncPlayerPreLoginEvent event) {
+        if (plugin.getConfiguration().isCheckOnJoin()) {
+            // Check for new bans/mutes
+            if (!plugin.getIpBanStorage().isBanned(event.getAddress())) {
+                try {
+                    IpBanData ban = plugin.getIpBanStorage().retrieveBan(IPUtils.toLong(event.getAddress()));
 
-          if (ban != null) plugin.getIpBanStorage().addBan(ban);
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
-      }
-
-      if (!plugin.getPlayerBanStorage().isBanned(event.getUniqueId())) {
-        try {
-          PlayerBanData ban = plugin.getPlayerBanStorage().retrieveBan(event.getUniqueId());
-
-          if (ban != null) plugin.getPlayerBanStorage().addBan(ban);
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
-      }
-
-      if (!plugin.getPlayerMuteStorage().isMuted(event.getUniqueId())) {
-        try {
-          PlayerMuteData mute = plugin.getPlayerMuteStorage().retrieveMute(event.getUniqueId());
-
-          if (mute != null) plugin.getPlayerMuteStorage().addMute(mute);
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
-      }
-    }
-
-    if (plugin.getIpRangeBanStorage().isBanned(event.getAddress())) {
-      IpRangeBanData data = plugin.getIpRangeBanStorage().getBan(event.getAddress());
-
-      if (data.hasExpired()) {
-        try {
-          plugin.getIpRangeBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
-
-        return;
-      }
-
-      Message message;
-
-      if (data.getExpires() == 0) {
-        message = Message.get("baniprange.ip.disallowed");
-      } else {
-        message = Message.get("tempbaniprange.ip.disallowed");
-        message.set("expires", DateUtils.getDifferenceFormat(data.getExpires()));
-      }
-
-      message.set("ip", event.getAddress().toString());
-      message.set("reason", data.getReason());
-      message.set("actor", data.getActor().getName());
-
-      event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_BANNED);
-      event.setKickMessage(message.toString());
-      return;
-    }
-
-    if (plugin.getIpBanStorage().isBanned(event.getAddress())) {
-      IpBanData data = plugin.getIpBanStorage().getBan(event.getAddress());
-
-      if (data.hasExpired()) {
-        try {
-          plugin.getIpBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
-
-        return;
-      }
-
-      Message message;
-
-      if (data.getExpires() == 0) {
-        message = Message.get("banip.ip.disallowed");
-      } else {
-        message = Message.get("tempbanip.ip.disallowed");
-        message.set("expires", DateUtils.getDifferenceFormat(data.getExpires()));
-      }
-
-      message.set("ip", event.getAddress().toString());
-      message.set("reason", data.getReason());
-      message.set("actor", data.getActor().getName());
-
-      event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_BANNED);
-      event.setKickMessage(message.toString());
-      handleJoinDeny(event.getAddress().toString(), data.getReason());
-      return;
-    }
-
-    PlayerBanData data = plugin.getPlayerBanStorage().getBan(event.getUniqueId());
-
-    if (data != null && data.hasExpired()) {
-      try {
-        plugin.getPlayerBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
-      } catch (SQLException e) {
-        e.printStackTrace();
-      }
-
-      return;
-    }
-
-    if (data == null) {
-      return;
-    }
-
-    Message message;
-
-    if (data.getExpires() == 0) {
-      message = Message.get("ban.player.disallowed");
-    } else {
-      message = Message.get("tempban.player.disallowed");
-      message.set("expires", DateUtils.getDifferenceFormat(data.getExpires()));
-    }
-
-    message.set("player", data.getPlayer().getName());
-    message.set("reason", data.getReason());
-    message.set("actor", data.getActor().getName());
-
-    event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_BANNED);
-    event.setKickMessage(message.toString());
-    handleJoinDeny(data.getPlayer(), data.getReason());
-  }
-
-  private void handleJoinDeny(PlayerData player, String reason) {
-    Message message = Message.get("deniedNotify.player").set("player", player.getName()).set("reason", reason);
-
-    CommandUtils.broadcast(message.toString(), "bm.notify.denied.player");
-  }
-
-  private void handleJoinDeny(String ip, String reason) {
-    Message message = Message.get("deniedNotify.ip").set("ip", ip).set("reason", reason);
-
-    CommandUtils.broadcast(message.toString(), "bm.notify.denied.ip");
-  }
-
-  @EventHandler(priority = EventPriority.MONITOR)
-  public void onJoin(AsyncPlayerPreLoginEvent event) {
-    PlayerData player = new PlayerData(event.getUniqueId(), event.getName(), event.getAddress());
-
-    try {
-      plugin.getPlayerStorage().createOrUpdate(player);
-    } catch (SQLException e) {
-      e.printStackTrace();
-      return;
-    }
-
-    if (plugin.getConfiguration().isLogIpsEnabled()) plugin.getPlayerHistoryStorage().create(player);
-
-  }
-
-  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-  public void onJoin(final PlayerJoinEvent event) {
-    plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, new Runnable() {
-
-      public void run() {
-        // Handle quick disconnects
-        if (event.getPlayer() == null || !event.getPlayer().isOnline()) {
-          return;
-        }
-
-        CloseableIterator<PlayerNoteData> notesItr = null;
-
-        try {
-          notesItr = plugin.getPlayerNoteStorage().getNotes(event.getPlayer().getUniqueId());
-          ArrayList<String> notes = new ArrayList<String>();
-          String dateTimeFormat = Message.getString("notes.dateTimeFormat");
-          FastDateFormat dateFormatter = FastDateFormat.getInstance(dateTimeFormat);
-
-          while (notesItr != null && notesItr.hasNext()) {
-            PlayerNoteData note = notesItr.next();
-
-            Message noteMessage = Message.get("notes.note")
-                                         .set("player", note.getActor().getName())
-                                         .set("message", note.getMessage())
-                                         .set("created", dateFormatter.format(note.getCreated() * 1000L));
-            notes.add(noteMessage.toString());
-          }
-
-          if (notes.size() != 0) {
-            String header = Message.get("notes.header")
-                                   .set("player", event.getPlayer().getName())
-                                   .toString();
-
-            CommandUtils.broadcast(header, "bm.notify.notes.join");
-
-            for (String message : notes) {
-              CommandUtils.broadcast(message, "bm.notify.notes.join");
+                    if (ban != null) {
+                        plugin.getIpBanStorage().addBan(ban);
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
 
-          }
-        } catch (SQLException e) {
-          e.printStackTrace();
-        } finally {
-          if (notesItr != null) notesItr.closeQuietly();
+            if (!plugin.getPlayerBanStorage().isBanned(event.getUniqueId())) {
+                try {
+                    PlayerBanData ban = plugin.getPlayerBanStorage().retrieveBan(event.getUniqueId());
+
+                    if (ban != null) {
+                        plugin.getPlayerBanStorage().addBan(ban);
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (!plugin.getPlayerMuteStorage().isMuted(event.getUniqueId())) {
+                try {
+                    PlayerMuteData mute = plugin.getPlayerMuteStorage().retrieveMute(event.getUniqueId());
+
+                    if (mute != null) {
+                        plugin.getPlayerMuteStorage().addMute(mute);
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-        CloseableIterator<PlayerWarnData> warnings = null;
+        if (plugin.getIpRangeBanStorage().isBanned(event.getAddress())) {
+            IpRangeBanData data = plugin.getIpRangeBanStorage().getBan(event.getAddress());
+
+            if (data.hasExpired()) {
+                try {
+                    plugin.getIpRangeBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+                return;
+            }
+
+            Message message;
+
+            if (data.getExpires() == 0) {
+                message = Message.get("baniprange.ip.disallowed");
+            } else {
+                message = Message.get("tempbaniprange.ip.disallowed");
+                message.set("expires", DateUtils.getDifferenceFormat(data.getExpires()));
+            }
+
+            message.set("ip", event.getAddress().toString());
+            message.set("reason", data.getReason());
+            message.set("actor", data.getActor().getName());
+
+            event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_BANNED);
+            event.setKickMessage(message.toString());
+            return;
+        }
+
+        if (plugin.getIpBanStorage().isBanned(event.getAddress())) {
+            IpBanData data = plugin.getIpBanStorage().getBan(event.getAddress());
+
+            if (data.hasExpired()) {
+                try {
+                    plugin.getIpBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+                return;
+            }
+
+            Message message;
+
+            if (data.getExpires() == 0) {
+                message = Message.get("banip.ip.disallowed");
+            } else {
+                message = Message.get("tempbanip.ip.disallowed");
+                message.set("expires", DateUtils.getDifferenceFormat(data.getExpires()));
+            }
+
+            message.set("ip", event.getAddress().toString());
+            message.set("reason", data.getReason());
+            message.set("actor", data.getActor().getName());
+
+            event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_BANNED);
+            event.setKickMessage(message.toString());
+            handleJoinDeny(event.getAddress().toString(), data.getReason());
+            return;
+        }
+
+        PlayerBanData data = plugin.getPlayerBanStorage().getBan(event.getUniqueId());
+
+        if (data != null && data.hasExpired()) {
+            try {
+                plugin.getPlayerBanStorage().unban(data, plugin.getPlayerStorage().getConsole());
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            return;
+        }
+
+        if (data == null) {
+            return;
+        }
+
+        Message message;
+
+        if (data.getExpires() == 0) {
+            message = Message.get("ban.player.disallowed");
+        } else {
+            message = Message.get("tempban.player.disallowed");
+            message.set("expires", DateUtils.getDifferenceFormat(data.getExpires()));
+        }
+
+        message.set("player", data.getPlayer().getName());
+        message.set("reason", data.getReason());
+        message.set("actor", data.getActor().getName());
+
+        event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_BANNED);
+        event.setKickMessage(message.toString());
+        handleJoinDeny(data.getPlayer(), data.getReason());
+    }
+
+    private void handleJoinDeny(PlayerData player, String reason) {
+        Message message = Message.get("deniedNotify.player").set("player", player.getName()).set("reason", reason);
+
+        CommandUtils.broadcast(message.toString(), "bm.notify.denied.player");
+    }
+
+    private void handleJoinDeny(String ip, String reason) {
+        Message message = Message.get("deniedNotify.ip").set("ip", ip).set("reason", reason);
+
+        CommandUtils.broadcast(message.toString(), "bm.notify.denied.ip");
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoin(AsyncPlayerPreLoginEvent event) {
+        PlayerData player = new PlayerData(event.getUniqueId(), event.getName(), event.getAddress());
+
         try {
-          warnings = plugin.getPlayerWarnStorage().getUnreadWarnings(event.getPlayer().getUniqueId());
-
-          while (warnings.hasNext()) {
-            PlayerWarnData warning = warnings.next();
-
-            Message.get("warn.player.warned")
-                   .set("displayName", event.getPlayer().getDisplayName())
-                   .set("player", event.getPlayer().getName())
-                   .set("reason", warning.getReason())
-                   .set("actor", warning.getActor().getName())
-                   .sendTo(event.getPlayer());
-
-            warning.setRead(true);
-            // TODO Move to one update query to set all warnings for player to read
-            plugin.getPlayerWarnStorage().update(warning);
-          }
+            plugin.getPlayerStorage().createOrUpdate(player);
         } catch (SQLException e) {
-          e.printStackTrace();
-        } finally {
-          if (warnings != null) warnings.closeQuietly();
+            e.printStackTrace();
+            return;
         }
 
-        if (event.getPlayer().hasPermission("bm.notify.reports.open")) {
-          try {
-            ReportList openReports = plugin.getPlayerReportStorage().getReports(1, 1);
+        if (plugin.getConfiguration().isLogIpsEnabled()) {
+            plugin.getPlayerHistoryStorage().create(player);
+        }
 
-            if (openReports == null || openReports.getList().size() != 0) {
-              CommandUtils.sendReportList(openReports, event.getPlayer(), 1);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onJoin(final PlayerJoinEvent event) {
+        plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, new Runnable() {
+
+            public void run() {
+                // Handle quick disconnects
+                if (event.getPlayer() == null || !event.getPlayer().isOnline()) {
+                    return;
+                }
+
+                CloseableIterator<PlayerNoteData> notesItr = null;
+
+                try {
+                    notesItr = plugin.getPlayerNoteStorage().getNotes(event.getPlayer().getUniqueId());
+                    ArrayList<String> notes = new ArrayList<String>();
+                    String dateTimeFormat = Message.getString("notes.dateTimeFormat");
+                    FastDateFormat dateFormatter = FastDateFormat.getInstance(dateTimeFormat);
+
+                    while (notesItr != null && notesItr.hasNext()) {
+                        PlayerNoteData note = notesItr.next();
+
+                        Message noteMessage = Message.get("notes.note")
+                                .set("player", note.getActor().getName())
+                                .set("message", note.getMessage())
+                                .set("created", dateFormatter.format(note.getCreated() * 1000L));
+                        notes.add(noteMessage.toString());
+                    }
+
+                    if (notes.size() != 0) {
+                        String header = Message.get("notes.header")
+                                .set("player", event.getPlayer().getName())
+                                .toString();
+
+                        CommandUtils.broadcast(header, "bm.notify.notes.join");
+
+                        for (String message : notes) {
+                            CommandUtils.broadcast(message, "bm.notify.notes.join");
+                        }
+
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (notesItr != null) {
+                        notesItr.closeQuietly();
+                    }
+                }
+
+                CloseableIterator<PlayerWarnData> warnings = null;
+                try {
+                    warnings = plugin.getPlayerWarnStorage().getUnreadWarnings(event.getPlayer().getUniqueId());
+
+                    while (warnings.hasNext()) {
+                        PlayerWarnData warning = warnings.next();
+
+                        Message.get("warn.player.warned")
+                                .set("displayName", event.getPlayer().getDisplayName())
+                                .set("player", event.getPlayer().getName())
+                                .set("reason", warning.getReason())
+                                .set("actor", warning.getActor().getName())
+                                .sendTo(event.getPlayer());
+
+                        warning.setRead(true);
+                        // TODO Move to one update query to set all warnings for player to read
+                        plugin.getPlayerWarnStorage().update(warning);
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (warnings != null) {
+                        warnings.closeQuietly();
+                    }
+                }
+
+                if (event.getPlayer().hasPermission("bm.notify.reports.open")) {
+                    try {
+                        ReportList openReports = plugin.getPlayerReportStorage().getReports(1, 1);
+
+                        if (openReports == null || openReports.getList().size() != 0) {
+                            CommandUtils.sendReportList(openReports, event.getPlayer(), 1);
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (event.getPlayer().hasPermission("bm.notify.reports.assigned")) {
+                    try {
+                        ReportList assignedReports = plugin.getPlayerReportStorage().getReports(1, 2, event.getPlayer().getUniqueId());
+
+                        if (assignedReports == null || assignedReports.getList().size() != 0) {
+                            CommandUtils.sendReportList(assignedReports, event.getPlayer(), 1);
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+
             }
-          } catch (SQLException e) {
-            e.printStackTrace();
-          }
+        }, 20L);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerLogin(final PlayerLoginEvent event) {
+        if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
+            return;
         }
 
-        if (event.getPlayer().hasPermission("bm.notify.reports.assigned")) {
-          try {
-            ReportList assignedReports = plugin.getPlayerReportStorage().getReports(1, 2, event.getPlayer().getUniqueId());
+        if (plugin.getGeoIpConfig().isEnabled() && !event.getPlayer().hasPermission("bm.exempt.country")) {
+            try {
+                CountryResponse countryResponse = plugin.getGeoIpConfig().getCountryDatabase().country(event.getAddress());
 
-            if (assignedReports == null || assignedReports.getList().size() != 0) {
-              CommandUtils.sendReportList(assignedReports, event.getPlayer(), 1);
+                if (!plugin.getGeoIpConfig().isCountryAllowed(countryResponse)) {
+                    Message message = Message.get("deniedCountry")
+                            .set("country", countryResponse.getCountry().getName())
+                            .set("countryIso", countryResponse.getCountry().getIsoCode());
+                    event.disallow(PlayerLoginEvent.Result.KICK_BANNED, message.toString());
+                    return;
+                }
+
+            } catch (IOException | GeoIp2Exception e) {
             }
-          } catch (SQLException e) {
-            e.printStackTrace();
-          }
         }
 
-      }
-    }, 20L);
-  }
+        if (plugin.getConfiguration().getMaxOnlinePerIp() > 0) {
+            long ip = IPUtils.toLong(event.getAddress());
+            int count = 0;
 
-  @EventHandler(priority = EventPriority.MONITOR)
-  public void onPlayerLogin(final PlayerLoginEvent event) {
-    if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
-      return;
+            for (Player player : plugin.getServer().getOnlinePlayers()) {
+                if (IPUtils.toLong(player.getAddress().getAddress()) == ip) {
+                    count++;
+                }
+            }
+
+            if (count >= plugin.getConfiguration().getMaxOnlinePerIp()) {
+                event.disallow(PlayerLoginEvent.Result.KICK_OTHER, Message.getString("deniedMaxIp"));
+                return;
+            }
+
+        }
+
+        if (!plugin.getConfiguration().isDuplicateIpCheckEnabled()) {
+            return;
+        }
+
+        plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, new Runnable() {
+
+            public void run() {
+                final long ip = IPUtils.toLong(event.getAddress());
+                final UUID uuid = event.getPlayer().getUniqueId();
+                List<PlayerData> duplicates = plugin.getPlayerBanStorage().getDuplicates(ip);
+
+                if (duplicates.isEmpty()) {
+                    return;
+                }
+
+                if (plugin.getConfiguration().isDenyAlts()) {
+                    try {
+                        denyAlts(duplicates, uuid);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (plugin.getConfiguration().isPunishAlts()) {
+                    try {
+                        punishAlts(duplicates, uuid);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                StringBuilder sb = new StringBuilder();
+
+                for (PlayerData player : duplicates) {
+                    if (player.getUUID().equals(uuid)) {
+                        continue;
+                    }
+
+                    sb.append(player.getName());
+                    sb.append(", ");
+                }
+
+                if (sb.length() == 0) {
+                    return;
+                }
+                if (sb.length() >= 2) {
+                    sb.setLength(sb.length() - 2);
+                }
+
+                Message message = Message.get("duplicateIP");
+                message.set("player", event.getPlayer().getName());
+                message.set("players", sb.toString());
+
+                CommandUtils.broadcast(message.toString(), "bm.notify.duplicateips");
+            }
+        }, 20L);
     }
 
-    if (plugin.getGeoIpConfig().isEnabled() && !event.getPlayer().hasPermission("bm.exempt.country")) {
-      try {
-        CountryResponse countryResponse = plugin.getGeoIpConfig().getCountryDatabase().country(event.getAddress());
-
-        if (!plugin.getGeoIpConfig().isCountryAllowed(countryResponse)) {
-          Message message = Message.get("deniedCountry")
-                                   .set("country", countryResponse.getCountry().getName())
-                                   .set("countryIso", countryResponse.getCountry().getIsoCode());
-          event.disallow(PlayerLoginEvent.Result.KICK_BANNED, message.toString());
-          return;
+    private void denyAlts(List<PlayerData> duplicates, final UUID uuid) throws SQLException {
+        if (plugin.getPlayerBanStorage().isBanned(uuid)) {
+            return;
         }
 
-      } catch (IOException | GeoIp2Exception e) {
-      }
+        for (final PlayerData player : duplicates) {
+            if (player.getUUID().equals(uuid)) {
+                continue;
+            }
+
+            final PlayerBanData ban = plugin.getPlayerBanStorage().getBan(player.getUUID());
+
+            if (ban == null) {
+                continue;
+            }
+            if (ban.hasExpired()) {
+                continue;
+            }
+
+            plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+
+                @Override
+                public void run() {
+                    Player bukkitPlayer = plugin.getServer().getPlayer(uuid);
+
+                    Message kickMessage = Message.get("denyalts.player.disallowed")
+                            .set("player", player.getName())
+                            .set("reason", ban.getReason())
+                            .set("actor", ban.getActor().getName());
+
+                    bukkitPlayer.kickPlayer(kickMessage.toString());
+                }
+            });
+        }
     }
 
-    if (plugin.getConfiguration().getMaxOnlinePerIp() > 0) {
-      long ip = IPUtils.toLong(event.getAddress());
-      int count = 0;
+    private void punishAlts(List<PlayerData> duplicates, UUID uuid) throws SQLException {
 
-      for (Player player : plugin.getServer().getOnlinePlayers()) {
-        if (IPUtils.toLong(player.getAddress().getAddress()) == ip) count++;
-      }
+        if (!plugin.getPlayerBanStorage().isBanned(uuid)) {
+            // Auto ban
+            for (PlayerData player : duplicates) {
+                if (player.getUUID().equals(uuid)) {
+                    continue;
+                }
 
-      if (count >= plugin.getConfiguration().getMaxOnlinePerIp()) {
-        event.disallow(PlayerLoginEvent.Result.KICK_OTHER, Message.getString("deniedMaxIp"));
-        return;
-      }
+                PlayerBanData ban = plugin.getPlayerBanStorage().getBan(player.getUUID());
 
+                if (ban == null) {
+                    continue;
+                }
+                if (ban.hasExpired()) {
+                    continue;
+                }
+
+                final PlayerBanData newBan = new PlayerBanData(plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(uuid)), plugin.getPlayerStorage().getConsole(), ban.getReason(), ban.getExpires());
+
+                plugin.getPlayerBanStorage().ban(newBan, false);
+
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Player bukkitPlayer = plugin.getServer().getPlayer(newBan.getPlayer().getUUID());
+
+                        Message kickMessage = Message.get("ban.player.kick")
+                                .set("displayName", bukkitPlayer.getDisplayName())
+                                .set("player", newBan.getPlayer().getName())
+                                .set("reason", newBan.getReason())
+                                .set("actor", newBan.getActor().getName());
+
+                        bukkitPlayer.kickPlayer(kickMessage.toString());
+                    }
+                });
+            }
+        } else if (!plugin.getPlayerMuteStorage().isMuted(uuid)) {
+            // Auto mute
+            for (PlayerData player : duplicates) {
+                if (player.getUUID().equals(uuid)) {
+                    continue;
+                }
+
+                PlayerMuteData mute = plugin.getPlayerMuteStorage().getMute(player.getUUID());
+
+                if (mute == null) {
+                    continue;
+                }
+                if (mute.hasExpired()) {
+                    continue;
+                }
+
+                PlayerMuteData newMute = new PlayerMuteData(plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(uuid)), plugin.getPlayerStorage().getConsole(), mute.getReason(), mute.isSoft(), mute.getExpires());
+
+                plugin.getPlayerMuteStorage().mute(newMute, false);
+            }
+        }
     }
-
-    if (!plugin.getConfiguration().isDuplicateIpCheckEnabled()) {
-      return;
-    }
-
-    plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, new Runnable() {
-
-      public void run() {
-        final long ip = IPUtils.toLong(event.getAddress());
-        final UUID uuid = event.getPlayer().getUniqueId();
-        List<PlayerData> duplicates = plugin.getPlayerBanStorage().getDuplicates(ip);
-
-        if (duplicates.isEmpty()) {
-          return;
-        }
-
-        if (plugin.getConfiguration().isDenyAlts()) {
-          try {
-            denyAlts(duplicates, uuid);
-          } catch (SQLException e) {
-            e.printStackTrace();
-          }
-        }
-
-        if (plugin.getConfiguration().isPunishAlts()) {
-          try {
-            punishAlts(duplicates, uuid);
-          } catch (SQLException e) {
-            e.printStackTrace();
-          }
-        }
-
-        StringBuilder sb = new StringBuilder();
-
-        for (PlayerData player : duplicates) {
-          if (player.getUUID().equals(uuid)) {
-            continue;
-          }
-
-          sb.append(player.getName());
-          sb.append(", ");
-        }
-
-        if (sb.length() == 0) return;
-        if (sb.length() >= 2) sb.setLength(sb.length() - 2);
-
-        Message message = Message.get("duplicateIP");
-        message.set("player", event.getPlayer().getName());
-        message.set("players", sb.toString());
-
-        CommandUtils.broadcast(message.toString(), "bm.notify.duplicateips");
-      }
-    }, 20L);
-  }
-
-  private void denyAlts(List<PlayerData> duplicates, final UUID uuid) throws SQLException {
-    if (plugin.getPlayerBanStorage().isBanned(uuid)) return;
-
-    for (final PlayerData player : duplicates) {
-      if (player.getUUID().equals(uuid)) continue;
-
-      final PlayerBanData ban = plugin.getPlayerBanStorage().getBan(player.getUUID());
-
-      if (ban == null) continue;
-      if (ban.hasExpired()) continue;
-
-      plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
-
-        @Override
-        public void run() {
-          Player bukkitPlayer = plugin.getServer().getPlayer(uuid);
-
-          Message kickMessage = Message.get("denyalts.player.disallowed")
-                                       .set("player", player.getName())
-                                       .set("reason", ban.getReason())
-                                       .set("actor", ban.getActor().getName());
-
-          bukkitPlayer.kickPlayer(kickMessage.toString());
-        }
-      });
-    }
-  }
-
-  private void punishAlts(List<PlayerData> duplicates, UUID uuid) throws SQLException {
-
-    if (!plugin.getPlayerBanStorage().isBanned(uuid)) {
-      // Auto ban
-      for (PlayerData player : duplicates) {
-        if (player.getUUID().equals(uuid)) {
-          continue;
-        }
-
-        PlayerBanData ban = plugin.getPlayerBanStorage().getBan(player.getUUID());
-
-        if (ban == null) continue;
-        if (ban.hasExpired()) continue;
-
-        final PlayerBanData newBan = new PlayerBanData(plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(uuid))
-                , plugin.getPlayerStorage().getConsole()
-                , ban.getReason()
-                , ban.getExpires());
-
-        plugin.getPlayerBanStorage().ban(newBan, false);
-
-        plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
-
-          @Override
-          public void run() {
-            Player bukkitPlayer = plugin.getServer().getPlayer(newBan.getPlayer().getUUID());
-
-            Message kickMessage = Message.get("ban.player.kick")
-                                         .set("displayName", bukkitPlayer.getDisplayName())
-                                         .set("player", newBan.getPlayer().getName())
-                                         .set("reason", newBan.getReason())
-                                         .set("actor", newBan.getActor().getName());
-
-            bukkitPlayer.kickPlayer(kickMessage.toString());
-          }
-        });
-      }
-    } else if (!plugin.getPlayerMuteStorage().isMuted(uuid)) {
-      // Auto mute
-      for (PlayerData player : duplicates) {
-        if (player.getUUID().equals(uuid)) {
-          continue;
-        }
-
-        PlayerMuteData mute = plugin.getPlayerMuteStorage().getMute(player.getUUID());
-
-        if (mute == null) continue;
-        if (mute.hasExpired()) continue;
-
-        PlayerMuteData newMute = new PlayerMuteData(plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(uuid))
-                , plugin.getPlayerStorage().getConsole()
-                , mute.getReason()
-                , mute.isSoft()
-                , mute.getExpires());
-
-        plugin.getPlayerMuteStorage().mute(newMute, false);
-      }
-    }
-  }
 }

@@ -18,127 +18,129 @@ import java.sql.SQLException;
 
 public class BanIpCommand extends AutoCompleteNameTabCommand<BanManager> {
 
-  public BanIpCommand() {
-    super("banip");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
-    CommandParser parser = new CommandParser(args, 1);
-    args = parser.getArgs();
-    final boolean isSilent = parser.isSilent();
-
-    if (isSilent && !sender.hasPermission(command.getPermission() + ".silent")) {
-      sender.sendMessage(Message.getString("sender.error.noPermission"));
-      return true;
+    public BanIpCommand() {
+        super("banip");
     }
 
-    if (args.length < 2) {
-      return false;
-    }
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
+        CommandParser parser = new CommandParser(args, 1);
+        args = parser.getArgs();
+        final boolean isSilent = parser.isSilent();
 
-    if (CommandUtils.isValidNameDelimiter(args[0])) {
-      CommandUtils.handleMultipleNames(sender, commandName, args);
-      return true;
-    }
-
-    final String ipStr = args[0];
-    final boolean isName = !InetAddresses.isInetAddress(ipStr);
-
-    if (isName && ipStr.length() > 16) {
-      Message message = Message.get("sender.error.invalidIp");
-      message.set("ip", ipStr);
-
-      sender.sendMessage(message.toString());
-      return true;
-    }
-
-    if (isName) {
-      Player onlinePlayer = plugin.getServer().getPlayer(ipStr);
-
-      if (onlinePlayer != null && !sender.hasPermission("bm.exempt.override.banip")
-              && onlinePlayer.hasPermission("bm.exempt.banip")) {
-        Message.get("sender.error.exempt").set("player", onlinePlayer.getName()).sendTo(sender);
-        return true;
-      }
-    }
-
-    final Reason reason = parser.getReason();
-
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        final Long ip = CommandUtils.getIp(ipStr);
-
-        if (ip == null) {
-          sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr).toString());
-          return;
+        if (isSilent && !sender.hasPermission(command.getPermission() + ".silent")) {
+            sender.sendMessage(Message.getString("sender.error.noPermission"));
+            return true;
         }
 
-        final boolean isBanned = plugin.getIpBanStorage().isBanned(ip);
-
-        if (isBanned && !sender.hasPermission("bm.command.banip.override")) {
-          Message message = Message.get("banip.error.exists");
-          message.set("ip", ipStr);
-
-          sender.sendMessage(message.toString());
-          return;
+        if (args.length < 2) {
+            return false;
         }
 
-        final PlayerData actor = CommandUtils.getActor(sender);
+        if (CommandUtils.isValidNameDelimiter(args[0])) {
+            CommandUtils.handleMultipleNames(sender, commandName, args);
+            return true;
+        }
 
-        if (actor == null) return;
+        final String ipStr = args[0];
+        final boolean isName = !InetAddresses.isInetAddress(ipStr);
 
-        if (isBanned) {
-          IpBanData ban = plugin.getIpBanStorage().getBan(ip);
+        if (isName && ipStr.length() > 16) {
+            Message message = Message.get("sender.error.invalidIp");
+            message.set("ip", ipStr);
 
-          if (ban != null) {
-            try {
-              plugin.getIpBanStorage().unban(ban, actor);
-            } catch (SQLException e) {
-              sender.sendMessage(Message.get("sender.error.exception").toString());
-              e.printStackTrace();
-              return;
+            sender.sendMessage(message.toString());
+            return true;
+        }
+
+        if (isName) {
+            Player onlinePlayer = plugin.getServer().getPlayer(ipStr);
+
+            if (onlinePlayer != null && !sender.hasPermission("bm.exempt.override.banip")
+                    && onlinePlayer.hasPermission("bm.exempt.banip")) {
+                Message.get("sender.error.exempt").set("player", onlinePlayer.getName()).sendTo(sender);
+                return true;
             }
-          }
         }
 
-        final IpBanData ban = new IpBanData(ip, actor, reason.getMessage());
-        boolean created;
+        final Reason reason = parser.getReason();
 
-        try {
-          created = plugin.getIpBanStorage().ban(ban, isSilent);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.get("sender.error.exception").toString());
-          e.printStackTrace();
-          return;
-        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 
-        if (!created) {
-          return;
-        }
+            @Override
+            public void run() {
+                final Long ip = CommandUtils.getIp(ipStr);
 
-        // Find online players
-        plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+                if (ip == null) {
+                    sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr).toString());
+                    return;
+                }
 
-          public void run() {
-            Message kickMessage = Message.get("banip.ip.kick")
-                                         .set("reason", ban.getReason())
-                                         .set("actor", actor.getName());
+                final boolean isBanned = plugin.getIpBanStorage().isBanned(ip);
 
-            for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
-              if (IPUtils.toLong(onlinePlayer.getAddress().getAddress()) == ip) {
-                onlinePlayer.kickPlayer(kickMessage.toString());
-              }
+                if (isBanned && !sender.hasPermission("bm.command.banip.override")) {
+                    Message message = Message.get("banip.error.exists");
+                    message.set("ip", ipStr);
+
+                    sender.sendMessage(message.toString());
+                    return;
+                }
+
+                final PlayerData actor = CommandUtils.getActor(sender);
+
+                if (actor == null) {
+                    return;
+                }
+
+                if (isBanned) {
+                    IpBanData ban = plugin.getIpBanStorage().getBan(ip);
+
+                    if (ban != null) {
+                        try {
+                            plugin.getIpBanStorage().unban(ban, actor);
+                        } catch (SQLException e) {
+                            sender.sendMessage(Message.get("sender.error.exception").toString());
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                }
+
+                final IpBanData ban = new IpBanData(ip, actor, reason.getMessage());
+                boolean created;
+
+                try {
+                    created = plugin.getIpBanStorage().ban(ban, isSilent);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.get("sender.error.exception").toString());
+                    e.printStackTrace();
+                    return;
+                }
+
+                if (!created) {
+                    return;
+                }
+
+                // Find online players
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+
+                    public void run() {
+                        Message kickMessage = Message.get("banip.ip.kick")
+                                .set("reason", ban.getReason())
+                                .set("actor", actor.getName());
+
+                        for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+                            if (IPUtils.toLong(onlinePlayer.getAddress().getAddress()) == ip) {
+                                onlinePlayer.kickPlayer(kickMessage.toString());
+                            }
+                        }
+                    }
+                });
             }
-          }
+
         });
-      }
 
-    });
-
-    return true;
-  }
+        return true;
+    }
 
 }

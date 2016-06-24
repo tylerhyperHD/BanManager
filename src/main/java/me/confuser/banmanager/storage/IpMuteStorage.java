@@ -24,128 +24,130 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class IpMuteStorage extends BaseDaoImpl<IpMuteData, Integer> {
 
-  private BanManager plugin = BanManager.getPlugin();
-  private ConcurrentHashMap<Long, IpMuteData> mutes = new ConcurrentHashMap<>();
+    private BanManager plugin = BanManager.getPlugin();
+    private ConcurrentHashMap<Long, IpMuteData> mutes = new ConcurrentHashMap<>();
 
-  public IpMuteStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<IpMuteData>) BanManager.getPlugin().getConfiguration().getLocalDb()
-                                                                  .getTable("ipMutes"));
+    public IpMuteStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<IpMuteData>) BanManager.getPlugin().getConfiguration().getLocalDb()
+                .getTable("ipMutes"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
+
+        CloseableIterator<IpMuteData> itr = iterator();
+
+        while (itr.hasNext()) {
+            IpMuteData mute = itr.next();
+
+            mutes.put(mute.getIp(), mute);
+        }
+
+        itr.close();
+
+        plugin.getLogger().info("Loaded " + mutes.size() + " ip mutes into memory");
     }
 
-    CloseableIterator<IpMuteData> itr = iterator();
-
-    while (itr.hasNext()) {
-      IpMuteData mute = itr.next();
-
-      mutes.put(mute.getIp(), mute);
+    public ConcurrentHashMap<Long, IpMuteData> getMutes() {
+        return mutes;
     }
 
-    itr.close();
-
-    plugin.getLogger().info("Loaded " + mutes.size() + " ip mutes into memory");
-  }
-
-  public ConcurrentHashMap<Long, IpMuteData> getMutes() {
-    return mutes;
-  }
-
-  public boolean isMuted(long ip) {
-    return mutes.get(ip) != null;
-  }
-
-  public boolean isMuted(InetAddress address) {
-    return isMuted(IPUtils.toLong(address));
-  }
-
-  public IpMuteData retrieveMute(long ip) throws SQLException {
-    List<IpMuteData> mutes = queryForEq("ip", ip);
-
-    if (mutes.isEmpty()) return null;
-
-    return mutes.get(0);
-  }
-
-  public IpMuteData getMute(long ip) {
-    return mutes.get(ip);
-  }
-
-  public IpMuteData getMute(InetAddress address) {
-    return getMute(IPUtils.toLong(address));
-  }
-
-  public void addMute(IpMuteData mute) {
-    mutes.put(mute.getIp(), mute);
-
-    if (plugin.getConfiguration().isBroadcastOnSync()) {
-      Bukkit.getServer().getPluginManager().callEvent(new IpMutedEvent(mute, false));
-    }
-  }
-
-  public void removeMute(IpMuteData mute) {
-    removeMute(mute.getIp());
-  }
-
-  public void removeMute(long ip) {
-    mutes.remove(ip);
-  }
-
-  public boolean mute(IpMuteData mute, boolean isSilent) throws SQLException {
-    IpMuteEvent event = new IpMuteEvent(mute, isSilent);
-    Bukkit.getServer().getPluginManager().callEvent(event);
-
-    if (event.isCancelled()) {
-      return false;
+    public boolean isMuted(long ip) {
+        return mutes.get(ip) != null;
     }
 
-    create(mute);
-    mutes.put(mute.getIp(), mute);
-
-    Bukkit.getServer().getPluginManager().callEvent(new IpMutedEvent(mute, event.isSilent()));
-
-    return true;
-  }
-
-  public boolean unmute(IpMuteData mute, PlayerData actor) throws SQLException {
-    return unmute(mute, actor, "");
-  }
-
-  public boolean unmute(IpMuteData mute, PlayerData actor, String reason) throws SQLException {
-    IpUnmutedEvent event = new IpUnmutedEvent(mute, actor, reason);
-    Bukkit.getServer().getPluginManager().callEvent(event);
-
-    if (event.isCancelled()) {
-      return false;
+    public boolean isMuted(InetAddress address) {
+        return isMuted(IPUtils.toLong(address));
     }
 
-    delete(mute);
-    mutes.remove(mute.getIp());
+    public IpMuteData retrieveMute(long ip) throws SQLException {
+        List<IpMuteData> mutes = queryForEq("ip", ip);
 
-    plugin.getIpMuteRecordStorage().addRecord(mute, actor, reason);
+        if (mutes.isEmpty()) {
+            return null;
+        }
 
-    return true;
-  }
-
-  public CloseableIterator<IpMuteData> findMutes(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        return mutes.get(0);
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public IpMuteData getMute(long ip) {
+        return mutes.get(ip);
+    }
 
-    QueryBuilder<IpMuteData, Integer> query = queryBuilder();
-    Where<IpMuteData, Integer> where = query.where();
-    where
-            .ge("created", checkTime)
-            .or()
-            .ge("updated", checkTime);
+    public IpMuteData getMute(InetAddress address) {
+        return getMute(IPUtils.toLong(address));
+    }
 
-    query.setWhere(where);
+    public void addMute(IpMuteData mute) {
+        mutes.put(mute.getIp(), mute);
 
-    return query.iterator();
+        if (plugin.getConfiguration().isBroadcastOnSync()) {
+            Bukkit.getServer().getPluginManager().callEvent(new IpMutedEvent(mute, false));
+        }
+    }
 
-  }
+    public void removeMute(IpMuteData mute) {
+        removeMute(mute.getIp());
+    }
+
+    public void removeMute(long ip) {
+        mutes.remove(ip);
+    }
+
+    public boolean mute(IpMuteData mute, boolean isSilent) throws SQLException {
+        IpMuteEvent event = new IpMuteEvent(mute, isSilent);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return false;
+        }
+
+        create(mute);
+        mutes.put(mute.getIp(), mute);
+
+        Bukkit.getServer().getPluginManager().callEvent(new IpMutedEvent(mute, event.isSilent()));
+
+        return true;
+    }
+
+    public boolean unmute(IpMuteData mute, PlayerData actor) throws SQLException {
+        return unmute(mute, actor, "");
+    }
+
+    public boolean unmute(IpMuteData mute, PlayerData actor, String reason) throws SQLException {
+        IpUnmutedEvent event = new IpUnmutedEvent(mute, actor, reason);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return false;
+        }
+
+        delete(mute);
+        mutes.remove(mute.getIp());
+
+        plugin.getIpMuteRecordStorage().addRecord(mute, actor, reason);
+
+        return true;
+    }
+
+    public CloseableIterator<IpMuteData> findMutes(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
+
+        long checkTime = fromTime + DateUtils.getTimeDiff();
+
+        QueryBuilder<IpMuteData, Integer> query = queryBuilder();
+        Where<IpMuteData, Integer> where = query.where();
+        where
+                .ge("created", checkTime)
+                .or()
+                .ge("updated", checkTime);
+
+        query.setWhere(where);
+
+        return query.iterator();
+
+    }
 
 }

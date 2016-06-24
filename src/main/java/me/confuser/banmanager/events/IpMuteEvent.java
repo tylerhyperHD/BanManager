@@ -5,11 +5,11 @@ import me.confuser.banmanager.data.IpMuteData;
 
 public class IpMuteEvent extends SilentCancellableEvent {
 
-  @Getter
-  private IpMuteData mute;
+    @Getter
+    private IpMuteData mute;
 
-  public IpMuteEvent(IpMuteData mute, boolean silent) {
-    super(silent);
-    this.mute = mute;
-  }
+    public IpMuteEvent(IpMuteData mute, boolean silent) {
+        super(silent);
+        this.mute = mute;
+    }
 }

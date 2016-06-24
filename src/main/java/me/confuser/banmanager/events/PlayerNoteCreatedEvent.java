@@ -5,10 +5,10 @@ import me.confuser.banmanager.data.PlayerNoteData;
 
 public class PlayerNoteCreatedEvent extends CustomCancellableEvent {
 
-  @Getter
-  private PlayerNoteData note;
+    @Getter
+    private PlayerNoteData note;
 
-  public PlayerNoteCreatedEvent(PlayerNoteData note) {
-    this.note = note;
-  }
+    public PlayerNoteCreatedEvent(PlayerNoteData note) {
+        this.note = note;
+    }
 }

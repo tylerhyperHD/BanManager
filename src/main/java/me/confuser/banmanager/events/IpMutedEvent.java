@@ -5,11 +5,11 @@ import me.confuser.banmanager.data.IpMuteData;
 
 public class IpMutedEvent extends SilentEvent {
 
-  @Getter
-  private IpMuteData mute;
+    @Getter
+    private IpMuteData mute;
 
-  public IpMutedEvent(IpMuteData mute, boolean silent) {
-    super(silent);
-    this.mute = mute;
-  }
+    public IpMutedEvent(IpMuteData mute, boolean silent) {
+        super(silent);
+        this.mute = mute;
+    }
 }

@@ -17,49 +17,49 @@ import java.sql.SQLException;
 
 public class IpRangeBanRecordStorage extends BaseDaoImpl<IpRangeBanRecord, Integer> {
 
-  public IpRangeBanRecordStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<IpRangeBanRecord>) BanManager.getPlugin().getConfiguration().getLocalDb()
-                                                                        .getTable("ipRangeBanRecords"));
+    public IpRangeBanRecordStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<IpRangeBanRecord>) BanManager.getPlugin().getConfiguration().getLocalDb()
+                .getTable("ipRangeBanRecords"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    } else {
-      // Attempt to add new columns
-      try {
-        String update = "ALTER TABLE " + tableConfig.getTableName() + " ADD COLUMN `createdReason` VARCHAR(255)";
-        executeRawNoArgs(update);
-      } catch (SQLException e) {
-      }
-    }
-  }
-
-  public void addRecord(IpRangeBanData ban, PlayerData actor, String reason) throws SQLException {
-    create(new IpRangeBanRecord(ban, actor, reason));
-  }
-
-  public CloseableIterator<IpRangeBanRecord> findUnbans(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        } else {
+            // Attempt to add new columns
+            try {
+                String update = "ALTER TABLE " + tableConfig.getTableName() + " ADD COLUMN `createdReason` VARCHAR(255)";
+                executeRawNoArgs(update);
+            } catch (SQLException e) {
+            }
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public void addRecord(IpRangeBanData ban, PlayerData actor, String reason) throws SQLException {
+        create(new IpRangeBanRecord(ban, actor, reason));
+    }
 
-    QueryBuilder<IpRangeBanRecord, Integer> query = queryBuilder();
-    Where<IpRangeBanRecord, Integer> where = query.where();
+    public CloseableIterator<IpRangeBanRecord> findUnbans(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    where.ge("created", checkTime);
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    query.setWhere(where);
+        QueryBuilder<IpRangeBanRecord, Integer> query = queryBuilder();
+        Where<IpRangeBanRecord, Integer> where = query.where();
 
-    return query.iterator();
+        where.ge("created", checkTime);
 
-  }
+        query.setWhere(where);
 
-  public long getCount(long ip) throws SQLException {
-    return queryBuilder().where().eq("ip", ip).countOf();
-  }
+        return query.iterator();
 
-  public CloseableIterator<IpRangeBanRecord> getRecords(long ip) throws SQLException {
-    return queryBuilder().where().eq("ip", ip).iterator();
-  }
+    }
+
+    public long getCount(long ip) throws SQLException {
+        return queryBuilder().where().eq("ip", ip).countOf();
+    }
+
+    public CloseableIterator<IpRangeBanRecord> getRecords(long ip) throws SQLException {
+        return queryBuilder().where().eq("ip", ip).iterator();
+    }
 }

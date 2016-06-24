@@ -14,26 +14,26 @@ import java.sql.SQLException;
 
 public class GlobalPlayerNoteStorage extends BaseDaoImpl<GlobalPlayerNoteData, Integer> {
 
-  public GlobalPlayerNoteStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<GlobalPlayerNoteData>) BanManager.getPlugin().getConfiguration()
-                                                                            .getGlobalDb().getTable("playerNotes"));
+    public GlobalPlayerNoteStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<GlobalPlayerNoteData>) BanManager.getPlugin().getConfiguration()
+                .getGlobalDb().getTable("playerNotes"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    }
-  }
-
-  public CloseableIterator<GlobalPlayerNoteData> findNotes(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public CloseableIterator<GlobalPlayerNoteData> findNotes(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    QueryBuilder<GlobalPlayerNoteData, Integer> query = queryBuilder();
-    query.setWhere(queryBuilder().where().ge("created", checkTime));
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    return query.iterator();
+        QueryBuilder<GlobalPlayerNoteData, Integer> query = queryBuilder();
+        query.setWhere(queryBuilder().where().ge("created", checkTime));
 
-  }
+        return query.iterator();
+
+    }
 }

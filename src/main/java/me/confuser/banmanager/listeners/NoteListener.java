@@ -12,29 +12,29 @@ import org.bukkit.event.EventPriority;
 
 public class NoteListener extends Listeners<BanManager> {
 
-  @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-  public void notifyOnNote(PlayerNoteCreatedEvent event) {
-    PlayerNoteData note = event.getNote();
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void notifyOnNote(PlayerNoteCreatedEvent event) {
+        PlayerNoteData note = event.getNote();
 
-    Message message = Message.get("notes.notify");
+        Message message = Message.get("notes.notify");
 
-    message.set("player", note.getPlayer().getName())
-           .set("playerId", note.getPlayer().getUUID().toString())
-           .set("actor", note.getActor().getName())
-           .set("message", note.getMessage());
+        message.set("player", note.getPlayer().getName())
+                .set("playerId", note.getPlayer().getUUID().toString())
+                .set("actor", note.getActor().getName())
+                .set("message", note.getMessage());
 
-    CommandUtils.broadcast(message.toString(), "bm.notify.notes");
+        CommandUtils.broadcast(message.toString(), "bm.notify.notes");
 
-    // Check if the sender is online and does not have the
-    // broadcastPermission
-    Player player;
-    if ((player = plugin.getServer().getPlayer(note.getActor().getUUID())) == null) {
-      return;
+        // Check if the sender is online and does not have the
+        // broadcastPermission
+        Player player;
+        if ((player = plugin.getServer().getPlayer(note.getActor().getUUID())) == null) {
+            return;
+        }
+
+        if (!player.hasPermission("bm.notify.notes")) {
+            message.sendTo(player);
+        }
     }
-
-    if (!player.hasPermission("bm.notify.notes")) {
-      message.sendTo(player);
-    }
-  }
 
 }

@@ -14,27 +14,27 @@ import java.sql.SQLException;
 
 public class GlobalPlayerMuteRecordStorage extends BaseDaoImpl<GlobalPlayerMuteRecordData, Integer> {
 
-  public GlobalPlayerMuteRecordStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<GlobalPlayerMuteRecordData>) BanManager.getPlugin().getConfiguration()
-                                                                                  .getGlobalDb()
-                                                                                  .getTable("playerUnmutes"));
+    public GlobalPlayerMuteRecordStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<GlobalPlayerMuteRecordData>) BanManager.getPlugin().getConfiguration()
+                .getGlobalDb()
+                .getTable("playerUnmutes"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    }
-  }
-
-  public CloseableIterator<GlobalPlayerMuteRecordData> findUnmutes(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public CloseableIterator<GlobalPlayerMuteRecordData> findUnmutes(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    QueryBuilder<GlobalPlayerMuteRecordData, Integer> query = queryBuilder();
-    query.setWhere(query.where().ge("created", checkTime));
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    return query.iterator();
+        QueryBuilder<GlobalPlayerMuteRecordData, Integer> query = queryBuilder();
+        query.setWhere(query.where().ge("created", checkTime));
 
-  }
+        return query.iterator();
+
+    }
 }

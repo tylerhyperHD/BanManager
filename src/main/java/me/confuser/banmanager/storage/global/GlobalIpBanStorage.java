@@ -14,26 +14,26 @@ import java.sql.SQLException;
 
 public class GlobalIpBanStorage extends BaseDaoImpl<GlobalIpBanData, Integer> {
 
-  public GlobalIpBanStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<GlobalIpBanData>) BanManager.getPlugin().getConfiguration().getGlobalDb()
-                                                                       .getTable("ipBans"));
+    public GlobalIpBanStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<GlobalIpBanData>) BanManager.getPlugin().getConfiguration().getGlobalDb()
+                .getTable("ipBans"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    }
-  }
-
-  public CloseableIterator<GlobalIpBanData> findBans(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public CloseableIterator<GlobalIpBanData> findBans(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    QueryBuilder<GlobalIpBanData, Integer> query = queryBuilder();
-    query.setWhere(query.where().ge("created", checkTime));
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    return query.iterator();
+        QueryBuilder<GlobalIpBanData, Integer> query = queryBuilder();
+        query.setWhere(query.where().ge("created", checkTime));
 
-  }
+        return query.iterator();
+
+    }
 }

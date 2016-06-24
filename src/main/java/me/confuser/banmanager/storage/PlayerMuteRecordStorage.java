@@ -18,58 +18,60 @@ import java.sql.SQLException;
 
 public class PlayerMuteRecordStorage extends BaseDaoImpl<PlayerMuteRecord, Integer> {
 
-  public PlayerMuteRecordStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<PlayerMuteRecord>) BanManager.getPlugin().getConfiguration()
-                                                                        .getLocalDb().getTable("playerMuteRecords"));
+    public PlayerMuteRecordStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<PlayerMuteRecord>) BanManager.getPlugin().getConfiguration()
+                .getLocalDb().getTable("playerMuteRecords"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    } else {
-      // Attempt to add new columns
-      try {
-        String update = "ALTER TABLE " + tableConfig.getTableName() + " ADD COLUMN `createdReason` VARCHAR(255), "
-        + " ADD COLUMN `soft` TINYINT(1)," +
-          " ADD KEY `" + tableConfig.getTableName() + "_soft_idx` (`soft`)";
-        executeRawNoArgs(update);
-      } catch (SQLException e) {
-      }
-    }
-  }
-
-  public void addRecord(PlayerMuteData mute, PlayerData actor, String reason) throws SQLException {
-    create(new PlayerMuteRecord(mute, actor, reason));
-  }
-
-  public CloseableIterator<PlayerMuteRecord> findUnmutes(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        } else {
+            // Attempt to add new columns
+            try {
+                String update = "ALTER TABLE " + tableConfig.getTableName() + " ADD COLUMN `createdReason` VARCHAR(255), "
+                        + " ADD COLUMN `soft` TINYINT(1),"
+                        + " ADD KEY `" + tableConfig.getTableName() + "_soft_idx` (`soft`)";
+                executeRawNoArgs(update);
+            } catch (SQLException e) {
+            }
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public void addRecord(PlayerMuteData mute, PlayerData actor, String reason) throws SQLException {
+        create(new PlayerMuteRecord(mute, actor, reason));
+    }
 
-    QueryBuilder<PlayerMuteRecord, Integer> query = queryBuilder();
-    Where<PlayerMuteRecord, Integer> where = query.where();
+    public CloseableIterator<PlayerMuteRecord> findUnmutes(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    where.ge("created", checkTime);
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    query.setWhere(where);
+        QueryBuilder<PlayerMuteRecord, Integer> query = queryBuilder();
+        Where<PlayerMuteRecord, Integer> where = query.where();
 
-    return query.iterator();
+        where.ge("created", checkTime);
 
-  }
+        query.setWhere(where);
 
-  public long getCount(PlayerData player) throws SQLException {
-    return queryBuilder().where().eq("player_id", player).countOf();
-  }
+        return query.iterator();
 
-  public CloseableIterator<PlayerMuteRecord> getRecords(PlayerData player) throws SQLException {
-    return queryBuilder().where().eq("player_id", player).iterator();
-  }
+    }
 
-  public void purge(CleanUp cleanup) throws SQLException {
-    if (cleanup.getDays() == 0) return;
+    public long getCount(PlayerData player) throws SQLException {
+        return queryBuilder().where().eq("player_id", player).countOf();
+    }
 
-    updateRaw("DELETE FROM " + getTableInfo().getTableName() + " WHERE created < UNIX_TIMESTAMP(DATE_SUB(NOW(), " +
-            "INTERVAL " + cleanup.getDays() + " DAY))");
-  }
+    public CloseableIterator<PlayerMuteRecord> getRecords(PlayerData player) throws SQLException {
+        return queryBuilder().where().eq("player_id", player).iterator();
+    }
+
+    public void purge(CleanUp cleanup) throws SQLException {
+        if (cleanup.getDays() == 0) {
+            return;
+        }
+
+        updateRaw("DELETE FROM " + getTableInfo().getTableName() + " WHERE created < UNIX_TIMESTAMP(DATE_SUB(NOW(), "
+                + "INTERVAL " + cleanup.getDays() + " DAY))");
+    }
 }

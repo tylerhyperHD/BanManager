@@ -17,95 +17,95 @@ import java.sql.SQLException;
 
 public class UnbanIpAllCommand extends BukkitCommand<BanManager> {
 
-  public UnbanIpAllCommand() {
-    super("unbanipall");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
-    if (args.length < 1) {
-      return false;
+    public UnbanIpAllCommand() {
+        super("unbanipall");
     }
 
-    // Check if UUID vs name
-    final String playerName = args[0];
-    final String ipStr = args[0];
-    final boolean isName = !InetAddresses.isInetAddress(ipStr);
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
+        if (args.length < 1) {
+            return false;
+        }
 
-    if (isName && ipStr.length() > 16) {
-      Message message = Message.get("invalidIp");
-      message.set("ip", ipStr);
+        // Check if UUID vs name
+        final String playerName = args[0];
+        final String ipStr = args[0];
+        final boolean isName = !InetAddresses.isInetAddress(ipStr);
 
-      sender.sendMessage(message.toString());
-      return true;
+        if (isName && ipStr.length() > 16) {
+            Message message = Message.get("invalidIp");
+            message.set("ip", ipStr);
+
+            sender.sendMessage(message.toString());
+            return true;
+        }
+
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+
+            @Override
+            public void run() {
+                final long ip;
+
+                if (isName) {
+                    PlayerData player = plugin.getPlayerStorage().retrieve(ipStr, false);
+                    if (player == null) {
+                        sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr).toString());
+                        return;
+                    }
+
+                    ip = player.getIp();
+                } else {
+                    ip = IPUtils.toLong(ipStr);
+                }
+
+                IpBanData ban = plugin.getIpBanStorage().getBan(ip);
+
+                if (ban == null) {
+                    Message message = Message.get("unbanip.error.noExists");
+                    message.set("ip", ipStr);
+
+                    sender.sendMessage(message.toString());
+                    return;
+                }
+
+                PlayerData actor;
+
+                if (sender instanceof Player) {
+                    try {
+                        actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
+                    } catch (SQLException e) {
+                        sender.sendMessage(Message.get("sender.error.exception").toString());
+                        e.printStackTrace();
+                        return;
+                    }
+                } else {
+                    actor = plugin.getPlayerStorage().getConsole();
+                }
+
+                GlobalIpBanRecordData record = new GlobalIpBanRecordData(ban.getIp(), actor);
+
+                int unbanned;
+
+                try {
+                    unbanned = plugin.getGlobalIpBanRecordStorage().create(record);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.get("errorOccurred").toString());
+                    e.printStackTrace();
+                    return;
+                }
+
+                if (unbanned == 0) {
+                    return;
+                }
+
+                Message.get("unbanipall.notify")
+                        .set("actor", actor.getName())
+                        .set("ip", ban.getIp())
+                        .sendTo(sender);
+            }
+
+        });
+
+        return true;
     }
-
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        final long ip;
-
-        if (isName) {
-          PlayerData player = plugin.getPlayerStorage().retrieve(ipStr, false);
-          if (player == null) {
-            sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr).toString());
-            return;
-          }
-
-          ip = player.getIp();
-        } else {
-          ip = IPUtils.toLong(ipStr);
-        }
-
-        IpBanData ban = plugin.getIpBanStorage().getBan(ip);
-
-        if (ban == null) {
-          Message message = Message.get("unbanip.error.noExists");
-          message.set("ip", ipStr);
-
-          sender.sendMessage(message.toString());
-          return;
-        }
-
-        PlayerData actor;
-
-        if (sender instanceof Player) {
-          try {
-            actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
-          } catch (SQLException e) {
-            sender.sendMessage(Message.get("sender.error.exception").toString());
-            e.printStackTrace();
-            return;
-          }
-        } else {
-          actor = plugin.getPlayerStorage().getConsole();
-        }
-
-        GlobalIpBanRecordData record = new GlobalIpBanRecordData(ban.getIp(), actor);
-
-        int unbanned;
-
-        try {
-          unbanned = plugin.getGlobalIpBanRecordStorage().create(record);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.get("errorOccurred").toString());
-          e.printStackTrace();
-          return;
-        }
-
-        if (unbanned == 0) {
-          return;
-        }
-
-        Message.get("unbanipall.notify")
-               .set("actor", actor.getName())
-               .set("ip", ban.getIp())
-               .sendTo(sender);
-      }
-
-    });
-
-    return true;
-  }
 }

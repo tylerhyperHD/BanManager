@@ -9,20 +9,20 @@ import org.bukkit.command.CommandSender;
 
 public class ReloadCommand extends BukkitCommand<BanManager> {
 
-  public ReloadCommand() {
-    super("bmreload");
-  }
+    public ReloadCommand() {
+        super("bmreload");
+    }
 
-  @Override
-  public boolean onCommand(CommandSender sender, Command command, String commandName, String[] args) {
-    plugin.getConfiguration().load();
-    new MessagesConfig().load();
-    plugin.getExemptionsConfig().load();
-    plugin.getReasonsConfig().load();
-    plugin.getGeoIpConfig().load();
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String commandName, String[] args) {
+        plugin.getConfiguration().load();
+        new MessagesConfig().load();
+        plugin.getExemptionsConfig().load();
+        plugin.getReasonsConfig().load();
+        plugin.getGeoIpConfig().load();
 
-    sender.sendMessage(Message.get("configReloaded").toString());
+        sender.sendMessage(Message.get("configReloaded").toString());
 
-    return true;
-  }
+        return true;
+    }
 }

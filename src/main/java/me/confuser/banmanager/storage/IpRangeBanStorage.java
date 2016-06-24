@@ -26,166 +26,172 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class IpRangeBanStorage extends BaseDaoImpl<IpRangeBanData, Integer> {
 
-  private BanManager plugin = BanManager.getPlugin();
-  private ArrayList<Range> ranges = new ArrayList<>();
-  private ConcurrentHashMap<Range, IpRangeBanData> bans = new ConcurrentHashMap<>();
+    private BanManager plugin = BanManager.getPlugin();
+    private ArrayList<Range> ranges = new ArrayList<>();
+    private ConcurrentHashMap<Range, IpRangeBanData> bans = new ConcurrentHashMap<>();
 
-  public IpRangeBanStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<IpRangeBanData>) BanManager.getPlugin().getConfiguration().getLocalDb()
-                                                                      .getTable("ipRangeBans"));
+    public IpRangeBanStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<IpRangeBanData>) BanManager.getPlugin().getConfiguration().getLocalDb()
+                .getTable("ipRangeBans"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-      return;
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+            return;
+        }
+
+        CloseableIterator<IpRangeBanData> itr = iterator();
+
+        while (itr.hasNext()) {
+            IpRangeBanData ban = itr.next();
+            Range<Long> range = Range.closed(ban.getFromIp(), ban.getToIp());
+
+            bans.put(range, ban);
+            ranges.add(range);
+        }
+
+        itr.close();
+
+        plugin.getLogger().info("Loaded " + bans.size() + " ip range bans into memory");
     }
 
-    CloseableIterator<IpRangeBanData> itr = iterator();
-
-    while (itr.hasNext()) {
-      IpRangeBanData ban = itr.next();
-      Range<Long> range = Range.closed(ban.getFromIp(), ban.getToIp());
-
-      bans.put(range, ban);
-      ranges.add(range);
+    public ConcurrentHashMap<Range, IpRangeBanData> getBans() {
+        return bans;
     }
 
-    itr.close();
-
-    plugin.getLogger().info("Loaded " + bans.size() + " ip range bans into memory");
-  }
-
-  public ConcurrentHashMap<Range, IpRangeBanData> getBans() {
-    return bans;
-  }
-
-  public boolean isBanned(long ip) {
-    return getRange(ip) != null;
-  }
-
-  private Range getRange(long ip) {
-    // o(n) lookup :(
-    // TODO Find a way to use a TreeRangeSet that's backwards compatible with older Craftbukkit versions
-    for (Range range : ranges) {
-      if (range.contains(ip)) return range;
+    public boolean isBanned(long ip) {
+        return getRange(ip) != null;
     }
 
-    return null;
-  }
+    private Range getRange(long ip) {
+        // o(n) lookup :(
+        // TODO Find a way to use a TreeRangeSet that's backwards compatible with older Craftbukkit versions
+        for (Range range : ranges) {
+            if (range.contains(ip)) {
+                return range;
+            }
+        }
 
-  public boolean isBanned(Range range) {
-    return bans.get(range) != null;
-  }
-
-  public boolean isBanned(IpRangeBanData ban) {
-    return isBanned(ban.getRange());
-  }
-
-  public boolean isBanned(InetAddress address) {
-    return isBanned(IPUtils.toLong(address));
-  }
-
-  public IpRangeBanData retrieveBan(long fromIp, long toIp) throws SQLException {
-    QueryBuilder<IpRangeBanData, Integer> query = this.queryBuilder();
-    Where<IpRangeBanData, Integer> where = queryBuilder().where();
-
-    where.eq("fromIp", fromIp).eq("toIp", toIp);
-
-    query.setWhere(where);
-
-    IpRangeBanData ban = query.queryForFirst();
-
-    return ban;
-  }
-
-  public IpRangeBanData getBan(long ip) {
-    Range range = getRange(ip);
-
-    if (range == null) return null;
-
-    return bans.get(range);
-  }
-
-  public IpRangeBanData getBan(InetAddress address) {
-    return getBan(IPUtils.toLong(address));
-  }
-
-  public void addBan(IpRangeBanData ban) {
-    Range range = Range.closed(ban.getFromIp(), ban.getToIp());
-
-    ranges.add(range);
-    bans.put(range, ban);
-
-    if (plugin.getConfiguration().isBroadcastOnSync()) {
-      Bukkit.getServer().getPluginManager().callEvent(new IpRangeBannedEvent(ban, false));
-    }
-  }
-
-  public void removeBan(IpRangeBanData ban) {
-    removeBan(ban.getRange());
-  }
-
-  public void removeBan(Range range) {
-    ranges.remove(range);
-    bans.remove(range);
-  }
-
-  public boolean ban(IpRangeBanData ban, boolean silent) throws SQLException {
-    IpRangeBanEvent event = new IpRangeBanEvent(ban, silent);
-    Bukkit.getServer().getPluginManager().callEvent(event);
-
-    if (event.isCancelled()) {
-      return false;
+        return null;
     }
 
-    create(ban);
-    Range range = Range.closed(ban.getFromIp(), ban.getToIp());
-
-    bans.put(range, ban);
-    ranges.add(range);
-
-    Bukkit.getServer().getPluginManager().callEvent(new IpRangeBannedEvent(ban, event.isSilent()));
-
-    return true;
-  }
-  public boolean unban(IpRangeBanData ban, PlayerData actor) throws SQLException {
-    return unban(ban, actor, "");
-  }
-  public boolean unban(IpRangeBanData ban, PlayerData actor, String reason) throws SQLException {
-    IpRangeUnbanEvent event = new IpRangeUnbanEvent(ban, actor, reason);
-    Bukkit.getServer().getPluginManager().callEvent(event);
-
-    if (event.isCancelled()) {
-      return false;
+    public boolean isBanned(Range range) {
+        return bans.get(range) != null;
     }
 
-    delete(ban);
-    Range range = Range.closed(ban.getFromIp(), ban.getToIp());
-
-    bans.remove(range);
-    ranges.remove(range);
-
-    plugin.getIpRangeBanRecordStorage().addRecord(ban, actor, reason);
-
-    return true;
-  }
-
-  public CloseableIterator<IpRangeBanData> findBans(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+    public boolean isBanned(IpRangeBanData ban) {
+        return isBanned(ban.getRange());
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public boolean isBanned(InetAddress address) {
+        return isBanned(IPUtils.toLong(address));
+    }
 
-    QueryBuilder<IpRangeBanData, Integer> query = queryBuilder();
-    Where<IpRangeBanData, Integer> where = query.where();
-    where
-            .ge("created", checkTime)
-            .or()
-            .ge("updated", checkTime);
+    public IpRangeBanData retrieveBan(long fromIp, long toIp) throws SQLException {
+        QueryBuilder<IpRangeBanData, Integer> query = this.queryBuilder();
+        Where<IpRangeBanData, Integer> where = queryBuilder().where();
 
-    query.setWhere(where);
+        where.eq("fromIp", fromIp).eq("toIp", toIp);
 
-    return query.iterator();
+        query.setWhere(where);
 
-  }
+        IpRangeBanData ban = query.queryForFirst();
+
+        return ban;
+    }
+
+    public IpRangeBanData getBan(long ip) {
+        Range range = getRange(ip);
+
+        if (range == null) {
+            return null;
+        }
+
+        return bans.get(range);
+    }
+
+    public IpRangeBanData getBan(InetAddress address) {
+        return getBan(IPUtils.toLong(address));
+    }
+
+    public void addBan(IpRangeBanData ban) {
+        Range range = Range.closed(ban.getFromIp(), ban.getToIp());
+
+        ranges.add(range);
+        bans.put(range, ban);
+
+        if (plugin.getConfiguration().isBroadcastOnSync()) {
+            Bukkit.getServer().getPluginManager().callEvent(new IpRangeBannedEvent(ban, false));
+        }
+    }
+
+    public void removeBan(IpRangeBanData ban) {
+        removeBan(ban.getRange());
+    }
+
+    public void removeBan(Range range) {
+        ranges.remove(range);
+        bans.remove(range);
+    }
+
+    public boolean ban(IpRangeBanData ban, boolean silent) throws SQLException {
+        IpRangeBanEvent event = new IpRangeBanEvent(ban, silent);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return false;
+        }
+
+        create(ban);
+        Range range = Range.closed(ban.getFromIp(), ban.getToIp());
+
+        bans.put(range, ban);
+        ranges.add(range);
+
+        Bukkit.getServer().getPluginManager().callEvent(new IpRangeBannedEvent(ban, event.isSilent()));
+
+        return true;
+    }
+
+    public boolean unban(IpRangeBanData ban, PlayerData actor) throws SQLException {
+        return unban(ban, actor, "");
+    }
+
+    public boolean unban(IpRangeBanData ban, PlayerData actor, String reason) throws SQLException {
+        IpRangeUnbanEvent event = new IpRangeUnbanEvent(ban, actor, reason);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return false;
+        }
+
+        delete(ban);
+        Range range = Range.closed(ban.getFromIp(), ban.getToIp());
+
+        bans.remove(range);
+        ranges.remove(range);
+
+        plugin.getIpRangeBanRecordStorage().addRecord(ban, actor, reason);
+
+        return true;
+    }
+
+    public CloseableIterator<IpRangeBanData> findBans(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
+
+        long checkTime = fromTime + DateUtils.getTimeDiff();
+
+        QueryBuilder<IpRangeBanData, Integer> query = queryBuilder();
+        Where<IpRangeBanData, Integer> where = query.where();
+        where
+                .ge("created", checkTime)
+                .or()
+                .ge("updated", checkTime);
+
+        query.setWhere(where);
+
+        return query.iterator();
+
+    }
 }

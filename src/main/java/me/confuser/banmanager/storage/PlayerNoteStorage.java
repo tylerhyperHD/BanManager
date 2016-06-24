@@ -19,40 +19,40 @@ import java.util.UUID;
 
 public class PlayerNoteStorage extends BaseDaoImpl<PlayerNoteData, Integer> {
 
-  private BanManager plugin = BanManager.getPlugin();
+    private BanManager plugin = BanManager.getPlugin();
 
-  public PlayerNoteStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<PlayerNoteData>) BanManager.getPlugin().getConfiguration()
-                                                                      .getLocalDb().getTable("playerNotes"));
+    public PlayerNoteStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<PlayerNoteData>) BanManager.getPlugin().getConfiguration()
+                .getLocalDb().getTable("playerNotes"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    }
-  }
-
-  public boolean addNote(PlayerNoteData data) throws SQLException {
-    PlayerNoteCreatedEvent event = new PlayerNoteCreatedEvent(data);
-    Bukkit.getServer().getPluginManager().callEvent(event);
-
-    if (event.isCancelled()) {
-      return false;
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
     }
 
-    return create(data) == 1;
-  }
+    public boolean addNote(PlayerNoteData data) throws SQLException {
+        PlayerNoteCreatedEvent event = new PlayerNoteCreatedEvent(data);
+        Bukkit.getServer().getPluginManager().callEvent(event);
 
-  public CloseableIterator<PlayerNoteData> getNotes(UUID uniqueId) throws SQLException {
-    return queryBuilder().where().eq("player_id", UUIDUtils.toBytes(uniqueId)).iterator();
-  }
+        if (event.isCancelled()) {
+            return false;
+        }
 
-  public int deleteAll(PlayerData player) throws SQLException {
-    DeleteBuilder<PlayerNoteData, Integer> builder = deleteBuilder();
+        return create(data) == 1;
+    }
 
-    Where<PlayerNoteData, Integer> where = builder.where();
-    where.eq("player_id", player);
+    public CloseableIterator<PlayerNoteData> getNotes(UUID uniqueId) throws SQLException {
+        return queryBuilder().where().eq("player_id", UUIDUtils.toBytes(uniqueId)).iterator();
+    }
 
-    builder.setWhere(where);
+    public int deleteAll(PlayerData player) throws SQLException {
+        DeleteBuilder<PlayerNoteData, Integer> builder = deleteBuilder();
 
-    return builder.delete();
-  }
+        Where<PlayerNoteData, Integer> where = builder.where();
+        where.eq("player_id", player);
+
+        builder.setWhere(where);
+
+        return builder.delete();
+    }
 }

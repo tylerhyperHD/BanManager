@@ -6,16 +6,16 @@ import me.confuser.banmanager.data.PlayerData;
 
 public class IpRangeUnbanEvent extends CustomCancellableEvent {
 
-  @Getter
-  private IpRangeBanData ban;
-  @Getter
-  private PlayerData actor;
-  @Getter
-  private String reason;
+    @Getter
+    private IpRangeBanData ban;
+    @Getter
+    private PlayerData actor;
+    @Getter
+    private String reason;
 
-  public IpRangeUnbanEvent(IpRangeBanData ban, PlayerData actor, String reason) {
-    this.ban = ban;
-    this.actor = actor;
-    this.reason = reason;
-  }
+    public IpRangeUnbanEvent(IpRangeBanData ban, PlayerData actor, String reason) {
+        this.ban = ban;
+        this.actor = actor;
+        this.reason = reason;
+    }
 }

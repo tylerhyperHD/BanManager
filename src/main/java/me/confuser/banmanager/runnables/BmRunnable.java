@@ -5,32 +5,33 @@ import lombok.Setter;
 import me.confuser.banmanager.BanManager;
 
 public abstract class BmRunnable implements Runnable {
-  protected BanManager plugin = BanManager.getPlugin();
 
-  @Getter
-  protected long lastChecked = 0;
-  @Getter
-  protected boolean isRunning = false;
-  @Getter
-  protected final String name;
+    protected BanManager plugin = BanManager.getPlugin();
 
-  public BmRunnable(String schedulerName) {
-    name = schedulerName;
+    @Getter
+    protected long lastChecked = 0;
+    @Getter
+    protected boolean isRunning = false;
+    @Getter
+    protected final String name;
 
-    lastChecked = plugin.getSchedulesConfig().getLastChecked(name);
-  }
+    public BmRunnable(String schedulerName) {
+        name = schedulerName;
 
-  public boolean shouldExecute() {
-    return (System.currentTimeMillis() / 1000L) - lastChecked > plugin.getSchedulesConfig().getSchedule(name);
-  }
+        lastChecked = plugin.getSchedulesConfig().getLastChecked(name);
+    }
 
-  public void beforeRun() {
-    isRunning = true;
-  }
+    public boolean shouldExecute() {
+        return (System.currentTimeMillis() / 1000L) - lastChecked > plugin.getSchedulesConfig().getSchedule(name);
+    }
 
-  public void afterRun() {
-    lastChecked = System.currentTimeMillis() / 1000L;
-    plugin.getSchedulesConfig().setLastChecked(name, lastChecked);
-    isRunning = false;
-  }
+    public void beforeRun() {
+        isRunning = true;
+    }
+
+    public void afterRun() {
+        lastChecked = System.currentTimeMillis() / 1000L;
+        plugin.getSchedulesConfig().setLastChecked(name, lastChecked);
+        isRunning = false;
+    }
 }

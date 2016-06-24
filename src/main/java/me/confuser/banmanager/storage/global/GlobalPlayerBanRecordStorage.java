@@ -14,27 +14,27 @@ import java.sql.SQLException;
 
 public class GlobalPlayerBanRecordStorage extends BaseDaoImpl<GlobalPlayerBanRecordData, Integer> {
 
-  public GlobalPlayerBanRecordStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<GlobalPlayerBanRecordData>) BanManager.getPlugin().getConfiguration()
-                                                                                 .getGlobalDb()
-                                                                                 .getTable("playerUnbans"));
+    public GlobalPlayerBanRecordStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<GlobalPlayerBanRecordData>) BanManager.getPlugin().getConfiguration()
+                .getGlobalDb()
+                .getTable("playerUnbans"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    }
-  }
-
-  public CloseableIterator<GlobalPlayerBanRecordData> findUnbans(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public CloseableIterator<GlobalPlayerBanRecordData> findUnbans(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    QueryBuilder<GlobalPlayerBanRecordData, Integer> query = queryBuilder();
-    query.setWhere(query.where().ge("created", checkTime));
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    return query.iterator();
+        QueryBuilder<GlobalPlayerBanRecordData, Integer> query = queryBuilder();
+        query.setWhere(query.where().ge("created", checkTime));
 
-  }
+        return query.iterator();
+
+    }
 }

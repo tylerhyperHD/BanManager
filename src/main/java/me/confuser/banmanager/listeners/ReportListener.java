@@ -17,56 +17,58 @@ import java.sql.SQLException;
 
 public class ReportListener extends Listeners<BanManager> {
 
-  @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-  public void notifyOnReport(PlayerReportedEvent event) {
-    PlayerReportData report = event.getReport();
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void notifyOnReport(PlayerReportedEvent event) {
+        PlayerReportData report = event.getReport();
 
-    Message message = Message.get("report.notify");
+        Message message = Message.get("report.notify");
 
-    message.set("player", report.getPlayer().getName())
-           .set("playerId", report.getPlayer().getUUID().toString())
-           .set("actor", report.getActor().getName())
-           .set("reason", report.getReason());
+        message.set("player", report.getPlayer().getName())
+                .set("playerId", report.getPlayer().getUUID().toString())
+                .set("actor", report.getActor().getName())
+                .set("reason", report.getReason());
 
-    CommandUtils.broadcast(message.toString(), "bm.notify.report");
+        CommandUtils.broadcast(message.toString(), "bm.notify.report");
 
-    // Check if the sender is online and does not have the
-    // broadcastPermission
-    Player player;
-    if ((player = plugin.getServer().getPlayer(report.getActor().getUUID())) == null) {
-      return;
+        // Check if the sender is online and does not have the
+        // broadcastPermission
+        Player player;
+        if ((player = plugin.getServer().getPlayer(report.getActor().getUUID())) == null) {
+            return;
+        }
+
+        if (!player.hasPermission("bm.notify.report")) {
+            message.sendTo(player);
+        }
     }
 
-    if (!player.hasPermission("bm.notify.report")) {
-      message.sendTo(player);
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void storeLocation(PlayerReportedEvent event) {
+        PlayerReportData report = event.getReport();
+
+        Player player = plugin.getServer().getPlayer(report.getPlayer().getUUID());
+        Player actor = plugin.getServer().getPlayer(report.getActor().getUUID());
+
+        try {
+            createLocation(report, player);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            createLocation(report, actor);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
-  }
 
-  @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-  public void storeLocation(PlayerReportedEvent event) {
-    PlayerReportData report = event.getReport();
+    private void createLocation(PlayerReportData report, Player player) throws SQLException {
+        if (player == null) {
+            return;
+        }
 
-    Player player = plugin.getServer().getPlayer(report.getPlayer().getUUID());
-    Player actor = plugin.getServer().getPlayer(report.getActor().getUUID());
-
-    try {
-      createLocation(report, player);
-    } catch (SQLException e) {
-      e.printStackTrace();
+        PlayerData playerData = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(player));
+        plugin.getPlayerReportLocationStorage()
+                .create(new PlayerReportLocationData(report, playerData, player.getLocation()));
     }
-
-    try {
-      createLocation(report, actor);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private void createLocation(PlayerReportData report, Player player) throws SQLException {
-    if (player == null) return;
-
-    PlayerData playerData = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(player));
-    plugin.getPlayerReportLocationStorage()
-          .create(new PlayerReportLocationData(report, playerData, player.getLocation()));
-  }
 }

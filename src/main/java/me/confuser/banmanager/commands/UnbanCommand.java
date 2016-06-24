@@ -19,134 +19,138 @@ import java.util.UUID;
 
 public class UnbanCommand extends BukkitCommand<BanManager> implements TabCompleter {
 
-  public UnbanCommand() {
-    super("unban");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
-    if (args.length < 1) {
-      return false;
+    public UnbanCommand() {
+        super("unban");
     }
 
-    if (CommandUtils.isValidNameDelimiter(args[0])) {
-      CommandUtils.handleMultipleNames(sender, commandName, args);
-      return true;
-    }
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
+        if (args.length < 1) {
+            return false;
+        }
 
-    // Check if UUID vs name
-    final String playerName = args[0];
-    final boolean isUUID = playerName.length() > 16;
-    boolean isBanned;
+        if (CommandUtils.isValidNameDelimiter(args[0])) {
+            CommandUtils.handleMultipleNames(sender, commandName, args);
+            return true;
+        }
 
-    if (isUUID) {
-      try {
-        isBanned = plugin.getPlayerBanStorage().isBanned(UUID.fromString(playerName));
-      } catch (IllegalArgumentException e) {
-        sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
-        return true;
-      }
-    } else {
-      isBanned = plugin.getPlayerBanStorage().isBanned(playerName);
-    }
-
-    if (!isBanned) {
-      Message message = Message.get("unban.error.noExists");
-      message.set("player", playerName);
-
-      sender.sendMessage(message.toString());
-      return true;
-    }
-
-    final String reason = args.length > 1 ? CommandUtils.getReason(1, args).getMessage() : "";
-
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        PlayerBanData ban;
+        // Check if UUID vs name
+        final String playerName = args[0];
+        final boolean isUUID = playerName.length() > 16;
+        boolean isBanned;
 
         if (isUUID) {
-          ban = plugin.getPlayerBanStorage().getBan(UUID.fromString(playerName));
+            try {
+                isBanned = plugin.getPlayerBanStorage().isBanned(UUID.fromString(playerName));
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
+                return true;
+            }
         } else {
-          ban = plugin.getPlayerBanStorage().getBan(playerName);
+            isBanned = plugin.getPlayerBanStorage().isBanned(playerName);
         }
 
-        if (ban == null) {
-          sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
-          return;
+        if (!isBanned) {
+            Message message = Message.get("unban.error.noExists");
+            message.set("player", playerName);
+
+            sender.sendMessage(message.toString());
+            return true;
         }
 
-        PlayerData actor;
+        final String reason = args.length > 1 ? CommandUtils.getReason(1, args).getMessage() : "";
 
-        if (sender instanceof Player) {
-          try {
-            actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
-          } catch (SQLException e) {
-            sender.sendMessage(Message.get("sender.error.exception").toString());
-            e.printStackTrace();
-            return;
-          }
-        } else {
-          actor = plugin.getPlayerStorage().getConsole();
-        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 
-        //TODO refactor if async perm check is problem
-        if (!actor.getUUID().equals(ban.getActor().getUUID()) && !sender.hasPermission("bm.exempt.override.ban")
-                && sender.hasPermission("bm.command.unban.own")) {
-          Message.get("unban.error.notOwn").set("player", ban.getPlayer().getName()).sendTo(sender);
-          return;
-        }
+            @Override
+            public void run() {
+                PlayerBanData ban;
 
-        boolean unbanned;
+                if (isUUID) {
+                    ban = plugin.getPlayerBanStorage().getBan(UUID.fromString(playerName));
+                } else {
+                    ban = plugin.getPlayerBanStorage().getBan(playerName);
+                }
 
-        try {
-          unbanned = plugin.getPlayerBanStorage().unban(ban, actor, reason);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.get("sender.error.exception").toString());
-          e.printStackTrace();
-          return;
-        }
+                if (ban == null) {
+                    sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
+                    return;
+                }
 
-        if (!unbanned) {
-          return;
-        }
+                PlayerData actor;
 
-        Message message = Message.get("unban.notify");
-        message
-                .set("player", ban.getPlayer().getName())
-                .set("playerId", ban.getPlayer().getUUID().toString())
-                .set("actor", actor.getName())
-                .set("reason", reason);
+                if (sender instanceof Player) {
+                    try {
+                        actor = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
+                    } catch (SQLException e) {
+                        sender.sendMessage(Message.get("sender.error.exception").toString());
+                        e.printStackTrace();
+                        return;
+                    }
+                } else {
+                    actor = plugin.getPlayerStorage().getConsole();
+                }
 
-        if (!sender.hasPermission("bm.notify.unban")) {
-          message.sendTo(sender);
-        }
+                //TODO refactor if async perm check is problem
+                if (!actor.getUUID().equals(ban.getActor().getUUID()) && !sender.hasPermission("bm.exempt.override.ban")
+                        && sender.hasPermission("bm.command.unban.own")) {
+                    Message.get("unban.error.notOwn").set("player", ban.getPlayer().getName()).sendTo(sender);
+                    return;
+                }
 
-        CommandUtils.broadcast(message.toString(), "bm.notify.unban");
-      }
+                boolean unbanned;
 
-    });
+                try {
+                    unbanned = plugin.getPlayerBanStorage().unban(ban, actor, reason);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.get("sender.error.exception").toString());
+                    e.printStackTrace();
+                    return;
+                }
 
-    return true;
-  }
+                if (!unbanned) {
+                    return;
+                }
 
-  @Override
-  public List<String> onTabComplete(CommandSender sender, Command command, String commandName, String[] args) {
+                Message message = Message.get("unban.notify");
+                message
+                        .set("player", ban.getPlayer().getName())
+                        .set("playerId", ban.getPlayer().getUUID().toString())
+                        .set("actor", actor.getName())
+                        .set("reason", reason);
 
-    ArrayList<String> mostLike = new ArrayList<>();
+                if (!sender.hasPermission("bm.notify.unban")) {
+                    message.sendTo(sender);
+                }
 
-    if (!sender.hasPermission(command.getPermission())) return mostLike;
-    if (args.length != 1) return mostLike;
+                CommandUtils.broadcast(message.toString(), "bm.notify.unban");
+            }
 
-    String nameSearch = args[0].toLowerCase();
+        });
 
-    for (PlayerBanData ban : plugin.getPlayerBanStorage().getBans().values()) {
-      if (ban.getPlayer().getName().toLowerCase().startsWith(nameSearch)) {
-        mostLike.add(ban.getPlayer().getName());
-      }
+        return true;
     }
 
-    return mostLike;
-  }
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String commandName, String[] args) {
+
+        ArrayList<String> mostLike = new ArrayList<>();
+
+        if (!sender.hasPermission(command.getPermission())) {
+            return mostLike;
+        }
+        if (args.length != 1) {
+            return mostLike;
+        }
+
+        String nameSearch = args[0].toLowerCase();
+
+        for (PlayerBanData ban : plugin.getPlayerBanStorage().getBans().values()) {
+            if (ban.getPlayer().getName().toLowerCase().startsWith(nameSearch)) {
+                mostLike.add(ban.getPlayer().getName());
+            }
+        }
+
+        return mostLike;
+    }
 }

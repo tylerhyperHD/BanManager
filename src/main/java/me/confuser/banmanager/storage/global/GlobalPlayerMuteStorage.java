@@ -14,35 +14,35 @@ import java.sql.SQLException;
 
 public class GlobalPlayerMuteStorage extends BaseDaoImpl<GlobalPlayerMuteData, Integer> {
 
-  public GlobalPlayerMuteStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<GlobalPlayerMuteData>) BanManager.getPlugin().getConfiguration()
-                                                                            .getGlobalDb().getTable("playerMutes"));
+    public GlobalPlayerMuteStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<GlobalPlayerMuteData>) BanManager.getPlugin().getConfiguration()
+                .getGlobalDb().getTable("playerMutes"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    } else {
-      // Attempt to add new columns
-      try {
-        String update = "ALTER TABLE " + tableConfig
-          .getTableName() + " ADD COLUMN `soft` TINYINT(1)," +
-          " ADD KEY `" + tableConfig.getTableName() + "_soft_idx` (`soft`)";
-        executeRawNoArgs(update);
-      } catch (SQLException e) {
-      }
-    }
-  }
-
-  public CloseableIterator<GlobalPlayerMuteData> findMutes(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        } else {
+            // Attempt to add new columns
+            try {
+                String update = "ALTER TABLE " + tableConfig
+                        .getTableName() + " ADD COLUMN `soft` TINYINT(1),"
+                        + " ADD KEY `" + tableConfig.getTableName() + "_soft_idx` (`soft`)";
+                executeRawNoArgs(update);
+            } catch (SQLException e) {
+            }
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public CloseableIterator<GlobalPlayerMuteData> findMutes(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    QueryBuilder<GlobalPlayerMuteData, Integer> query = queryBuilder();
-    query.setWhere(query.where().ge("created", checkTime));
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    return query.iterator();
+        QueryBuilder<GlobalPlayerMuteData, Integer> query = queryBuilder();
+        query.setWhere(query.where().ge("created", checkTime));
 
-  }
+        return query.iterator();
+
+    }
 }

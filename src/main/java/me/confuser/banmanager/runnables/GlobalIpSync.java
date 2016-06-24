@@ -15,87 +15,90 @@ import java.sql.SQLException;
 
 public class GlobalIpSync extends BmRunnable {
 
-  private GlobalIpBanStorage banStorage = plugin.getGlobalIpBanStorage();
-  private IpBanStorage localBanStorage = plugin.getIpBanStorage();
-  private GlobalIpBanRecordStorage recordStorage = plugin.getGlobalIpBanRecordStorage();
+    private GlobalIpBanStorage banStorage = plugin.getGlobalIpBanStorage();
+    private IpBanStorage localBanStorage = plugin.getIpBanStorage();
+    private GlobalIpBanRecordStorage recordStorage = plugin.getGlobalIpBanRecordStorage();
 
-  public GlobalIpSync() {
-    super("externalIpBans");
-  }
+    public GlobalIpSync() {
+        super("externalIpBans");
+    }
 
-  @Override
-  public void run() {
-    newBans();
-    newUnbans();
-  }
+    @Override
+    public void run() {
+        newBans();
+        newUnbans();
+    }
 
+    private void newBans() {
 
-  private void newBans() {
+        CloseableIterator<GlobalIpBanData> itr = null;
+        try {
+            itr = banStorage.findBans(lastChecked);
 
-    CloseableIterator<GlobalIpBanData> itr = null;
-    try {
-      itr = banStorage.findBans(lastChecked);
+            while (itr.hasNext()) {
+                GlobalIpBanData ban = itr.next();
 
-      while (itr.hasNext()) {
-        GlobalIpBanData ban = itr.next();
+                final IpBanData localBan = ban.toLocal();
 
-        final IpBanData localBan = ban.toLocal();
+                if (localBanStorage.retrieveBan(ban.getIp()) != null) {
+                    // Global ban overrides local
+                    localBanStorage
+                            .unban(localBan, ban.getActor());
+                } else if (localBanStorage.isBanned(ban.getIp())) {
+                    localBanStorage.removeBan(ban.getIp());
+                }
 
-        if (localBanStorage.retrieveBan(ban.getIp()) != null) {
-          // Global ban overrides local
-          localBanStorage
-                  .unban(localBan, ban.getActor());
-        } else if (localBanStorage.isBanned(ban.getIp())) {
-          localBanStorage.removeBan(ban.getIp());
-        }
+                localBanStorage.ban(localBan, false);
 
-        localBanStorage.ban(localBan, false);
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
 
-        plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+                    @Override
+                    public void run() {
+                        Message kickMessage = Message.get("banip.ip.kick").set("reason", localBan.getReason())
+                                .set("actor", localBan.getActor().getName());
 
-          @Override
-          public void run() {
-            Message kickMessage = Message.get("banip.ip.kick").set("reason", localBan.getReason())
-                                         .set("actor", localBan.getActor().getName());
+                        for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+                            if (IPUtils.toLong(onlinePlayer.getAddress().getAddress()) == localBan.getIp()) {
+                                onlinePlayer.kickPlayer(kickMessage.toString());
+                            }
+                        }
+                    }
+                });
 
-            for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
-              if (IPUtils.toLong(onlinePlayer.getAddress().getAddress()) == localBan.getIp()) {
-                onlinePlayer.kickPlayer(kickMessage.toString());
-              }
             }
-          }
-        });
-
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    } finally {
-      if (itr != null) itr.closeQuietly();
-    }
-
-  }
-
-  private void newUnbans() {
-
-    CloseableIterator<GlobalIpBanRecordData> itr = null;
-    try {
-      itr = recordStorage.findUnbans(lastChecked);
-
-      while (itr.hasNext()) {
-        GlobalIpBanRecordData record = itr.next();
-
-        if (!localBanStorage.isBanned(record.getIp())) {
-          continue;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (itr != null) {
+                itr.closeQuietly();
+            }
         }
 
-        localBanStorage.unban(localBanStorage.getBan(record.getIp()), record.getActor());
-
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    } finally {
-      if (itr != null) itr.closeQuietly();
     }
 
-  }
+    private void newUnbans() {
+
+        CloseableIterator<GlobalIpBanRecordData> itr = null;
+        try {
+            itr = recordStorage.findUnbans(lastChecked);
+
+            while (itr.hasNext()) {
+                GlobalIpBanRecordData record = itr.next();
+
+                if (!localBanStorage.isBanned(record.getIp())) {
+                    continue;
+                }
+
+                localBanStorage.unban(localBanStorage.getBan(record.getIp()), record.getActor());
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (itr != null) {
+                itr.closeQuietly();
+            }
+        }
+
+    }
 }

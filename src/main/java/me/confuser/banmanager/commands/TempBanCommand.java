@@ -19,176 +19,180 @@ import java.util.UUID;
 
 public class TempBanCommand extends AutoCompleteNameTabCommand<BanManager> {
 
-  public TempBanCommand() {
-    super("tempban");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
-    CommandParser parser = new CommandParser(args, 2);
-    args = parser.getArgs();
-    final boolean isSilent = parser.isSilent();
-
-    if (isSilent && !sender.hasPermission(command.getPermission() + ".silent")) {
-      sender.sendMessage(Message.getString("sender.error.noPermission"));
-      return true;
+    public TempBanCommand() {
+        super("tempban");
     }
 
-    if (args.length < 3) {
-      return false;
-    }
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
+        CommandParser parser = new CommandParser(args, 2);
+        args = parser.getArgs();
+        final boolean isSilent = parser.isSilent();
 
-    if (CommandUtils.isValidNameDelimiter(args[0])) {
-      CommandUtils.handleMultipleNames(sender, commandName, args);
-      return true;
-    }
-
-    if (args[0].equalsIgnoreCase(sender.getName())) {
-      sender.sendMessage(Message.getString("sender.error.noSelf"));
-      return true;
-    }
-
-    // Check if UUID vs name
-    final String playerName = args[0];
-    final boolean isUUID = playerName.length() > 16;
-    final boolean isBanned;
-
-    if (isUUID) {
-      try {
-        isBanned = plugin.getPlayerBanStorage().isBanned(UUID.fromString(playerName));
-      } catch (IllegalArgumentException e) {
-        sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
-        return true;
-      }
-    } else {
-      isBanned = plugin.getPlayerBanStorage().isBanned(playerName);
-    }
-
-    if (isBanned && !sender.hasPermission("bm.command.tempban.override")) {
-      Message message = Message.get("ban.error.exists");
-      message.set("player", playerName);
-
-      sender.sendMessage(message.toString());
-      return true;
-    }
-
-    Player onlinePlayer;
-
-    if (isUUID) {
-      onlinePlayer = plugin.getServer().getPlayer(UUID.fromString(playerName));
-    } else {
-      onlinePlayer = plugin.getServer().getPlayer(playerName);
-    }
-
-    if (onlinePlayer == null) {
-      if (!sender.hasPermission("bm.command.tempban.offline")) {
-        sender.sendMessage(Message.getString("sender.error.offlinePermission"));
-        return true;
-      }
-    } else if (!sender.hasPermission("bm.exempt.override.tempban") && onlinePlayer.hasPermission("bm.exempt.tempban")) {
-      Message.get("sender.error.exempt").set("player", onlinePlayer.getName()).sendTo(sender);
-      return true;
-    }
-
-    long expiresCheck;
-
-    try {
-      expiresCheck = DateUtils.parseDateDiff(args[1], true);
-    } catch (Exception e1) {
-      sender.sendMessage(Message.get("time.error.invalid").toString());
-      return true;
-    }
-
-    if (plugin.getConfiguration().getTimeLimits().isPastLimit(sender, TimeLimitType.PLAYER_BAN, expiresCheck)) {
-      Message.get("time.error.limit").sendTo(sender);
-      return true;
-    }
-
-    final long expires = expiresCheck;
-    final Reason reason = parser.getReason();
-
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        final PlayerData player = CommandUtils.getPlayer(sender, playerName);
-
-        if (player == null) {
-          sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
-          return;
+        if (isSilent && !sender.hasPermission(command.getPermission() + ".silent")) {
+            sender.sendMessage(Message.getString("sender.error.noPermission"));
+            return true;
         }
 
-        if (plugin.getExemptionsConfig().isExempt(player, "tempban")) {
-          sender.sendMessage(Message.get("sender.error.exempt").set("player", playerName).toString());
-          return;
+        if (args.length < 3) {
+            return false;
         }
 
-        final PlayerData actor = CommandUtils.getActor(sender);
+        if (CommandUtils.isValidNameDelimiter(args[0])) {
+            CommandUtils.handleMultipleNames(sender, commandName, args);
+            return true;
+        }
 
-        if (actor == null) return;
+        if (args[0].equalsIgnoreCase(sender.getName())) {
+            sender.sendMessage(Message.getString("sender.error.noSelf"));
+            return true;
+        }
 
-        if (isBanned) {
-          PlayerBanData ban;
+        // Check if UUID vs name
+        final String playerName = args[0];
+        final boolean isUUID = playerName.length() > 16;
+        final boolean isBanned;
 
-          if (isUUID) {
-            ban = plugin.getPlayerBanStorage().getBan(UUID.fromString(playerName));
-          } else {
-            ban = plugin.getPlayerBanStorage().getBan(playerName);
-          }
-
-          if (ban != null) {
+        if (isUUID) {
             try {
-              plugin.getPlayerBanStorage().unban(ban, actor);
-            } catch (SQLException e) {
-              sender.sendMessage(Message.get("sender.error.exception").toString());
-              e.printStackTrace();
-              return;
+                isBanned = plugin.getPlayerBanStorage().isBanned(UUID.fromString(playerName));
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
+                return true;
             }
-          }
+        } else {
+            isBanned = plugin.getPlayerBanStorage().isBanned(playerName);
         }
 
-        final PlayerBanData ban = new PlayerBanData(player, actor, reason.getMessage(), expires);
-        boolean created;
+        if (isBanned && !sender.hasPermission("bm.command.tempban.override")) {
+            Message message = Message.get("ban.error.exists");
+            message.set("player", playerName);
+
+            sender.sendMessage(message.toString());
+            return true;
+        }
+
+        Player onlinePlayer;
+
+        if (isUUID) {
+            onlinePlayer = plugin.getServer().getPlayer(UUID.fromString(playerName));
+        } else {
+            onlinePlayer = plugin.getServer().getPlayer(playerName);
+        }
+
+        if (onlinePlayer == null) {
+            if (!sender.hasPermission("bm.command.tempban.offline")) {
+                sender.sendMessage(Message.getString("sender.error.offlinePermission"));
+                return true;
+            }
+        } else if (!sender.hasPermission("bm.exempt.override.tempban") && onlinePlayer.hasPermission("bm.exempt.tempban")) {
+            Message.get("sender.error.exempt").set("player", onlinePlayer.getName()).sendTo(sender);
+            return true;
+        }
+
+        long expiresCheck;
 
         try {
-          created = plugin.getPlayerBanStorage().ban(ban, isSilent);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.get("sender.error.exception").toString());
-          e.printStackTrace();
-          return;
+            expiresCheck = DateUtils.parseDateDiff(args[1], true);
+        } catch (Exception e1) {
+            sender.sendMessage(Message.get("time.error.invalid").toString());
+            return true;
         }
 
-        if (!created) {
-          return;
+        if (plugin.getConfiguration().getTimeLimits().isPastLimit(sender, TimeLimitType.PLAYER_BAN, expiresCheck)) {
+            Message.get("time.error.limit").sendTo(sender);
+            return true;
         }
 
-        CommandUtils.handlePrivateNotes(player, actor, reason);
+        final long expires = expiresCheck;
+        final Reason reason = parser.getReason();
 
-        plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 
-          @Override
-          public void run() {
-            Player bukkitPlayer = plugin.getServer().getPlayer(player.getUUID());
+            @Override
+            public void run() {
+                final PlayerData player = CommandUtils.getPlayer(sender, playerName);
 
-            if (bukkitPlayer == null) return;
+                if (player == null) {
+                    sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
+                    return;
+                }
 
-            Message kickMessage = Message.get("tempban.player.kick")
-                                         .set("displayName", bukkitPlayer.getDisplayName())
-                                         .set("player", player.getName())
-                                         .set("playerId", player.getUUID().toString())
-                                         .set("reason", ban.getReason())
-                                         .set("actor", actor.getName())
-                                         .set("expires", DateUtils.getDifferenceFormat(ban.getExpires()));
+                if (plugin.getExemptionsConfig().isExempt(player, "tempban")) {
+                    sender.sendMessage(Message.get("sender.error.exempt").set("player", playerName).toString());
+                    return;
+                }
 
-            bukkitPlayer.kickPlayer(kickMessage.toString());
-          }
+                final PlayerData actor = CommandUtils.getActor(sender);
+
+                if (actor == null) {
+                    return;
+                }
+
+                if (isBanned) {
+                    PlayerBanData ban;
+
+                    if (isUUID) {
+                        ban = plugin.getPlayerBanStorage().getBan(UUID.fromString(playerName));
+                    } else {
+                        ban = plugin.getPlayerBanStorage().getBan(playerName);
+                    }
+
+                    if (ban != null) {
+                        try {
+                            plugin.getPlayerBanStorage().unban(ban, actor);
+                        } catch (SQLException e) {
+                            sender.sendMessage(Message.get("sender.error.exception").toString());
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                }
+
+                final PlayerBanData ban = new PlayerBanData(player, actor, reason.getMessage(), expires);
+                boolean created;
+
+                try {
+                    created = plugin.getPlayerBanStorage().ban(ban, isSilent);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.get("sender.error.exception").toString());
+                    e.printStackTrace();
+                    return;
+                }
+
+                if (!created) {
+                    return;
+                }
+
+                CommandUtils.handlePrivateNotes(player, actor, reason);
+
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Player bukkitPlayer = plugin.getServer().getPlayer(player.getUUID());
+
+                        if (bukkitPlayer == null) {
+                            return;
+                        }
+
+                        Message kickMessage = Message.get("tempban.player.kick")
+                                .set("displayName", bukkitPlayer.getDisplayName())
+                                .set("player", player.getName())
+                                .set("playerId", player.getUUID().toString())
+                                .set("reason", ban.getReason())
+                                .set("actor", actor.getName())
+                                .set("expires", DateUtils.getDifferenceFormat(ban.getExpires()));
+
+                        bukkitPlayer.kickPlayer(kickMessage.toString());
+                    }
+
+                });
+
+            }
 
         });
 
-      }
-
-    });
-
-    return true;
-  }
+        return true;
+    }
 }

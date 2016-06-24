@@ -14,26 +14,26 @@ import java.sql.SQLException;
 
 public class GlobalIpBanRecordStorage extends BaseDaoImpl<GlobalIpBanRecordData, Integer> {
 
-  public GlobalIpBanRecordStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<GlobalIpBanRecordData>) BanManager.getPlugin().getConfiguration()
-                                                                             .getGlobalDb().getTable("ipUnbans"));
+    public GlobalIpBanRecordStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<GlobalIpBanRecordData>) BanManager.getPlugin().getConfiguration()
+                .getGlobalDb().getTable("ipUnbans"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    }
-  }
-
-  public CloseableIterator<GlobalIpBanRecordData> findUnbans(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public CloseableIterator<GlobalIpBanRecordData> findUnbans(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    QueryBuilder<GlobalIpBanRecordData, Integer> query = queryBuilder();
-    query.setWhere(query.where().ge("created", checkTime));
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    return query.iterator();
+        QueryBuilder<GlobalIpBanRecordData, Integer> query = queryBuilder();
+        query.setWhere(query.where().ge("created", checkTime));
 
-  }
+        return query.iterator();
+
+    }
 }

@@ -12,18 +12,18 @@ import java.sql.SQLException;
 
 public class PlayerReportCommandStorage extends BaseDaoImpl<PlayerReportCommandData, Integer> {
 
-  public PlayerReportCommandStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<PlayerReportCommandData>) BanManager.getPlugin().getConfiguration()
-                                                                                .getLocalDb()
-                                                                                .getTable("playerReportCommands"));
+    public PlayerReportCommandStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<PlayerReportCommandData>) BanManager.getPlugin().getConfiguration()
+                .getLocalDb()
+                .getTable("playerReportCommands"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
     }
-  }
 
-  public PlayerReportCommandData getByReportId(int id) throws SQLException {
-    return queryBuilder().where().eq("report_id", id).queryForFirst();
-  }
+    public PlayerReportCommandData getByReportId(int id) throws SQLException {
+        return queryBuilder().where().eq("report_id", id).queryForFirst();
+    }
 
 }

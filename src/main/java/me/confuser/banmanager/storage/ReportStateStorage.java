@@ -12,19 +12,19 @@ import java.sql.SQLException;
 
 public class ReportStateStorage extends BaseDaoImpl<ReportState, Integer> {
 
-  public ReportStateStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<ReportState>) BanManager.getPlugin().getConfiguration()
-                                                                                .getLocalDb()
-                                                                                .getTable("playerReportStates"));
+    public ReportStateStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<ReportState>) BanManager.getPlugin().getConfiguration()
+                .getLocalDb()
+                .getTable("playerReportStates"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
 
-      create(new ReportState("Open"));
-      create(new ReportState("Assigned"));
-      create(new ReportState("Resolved"));
-      create(new ReportState("Closed"));
+            create(new ReportState("Open"));
+            create(new ReportState("Assigned"));
+            create(new ReportState("Resolved"));
+            create(new ReportState("Closed"));
+        }
     }
-  }
 
 }

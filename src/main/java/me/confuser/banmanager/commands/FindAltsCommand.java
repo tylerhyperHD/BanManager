@@ -16,68 +16,68 @@ import java.util.List;
 
 public class FindAltsCommand extends AutoCompleteNameTabCommand<BanManager> {
 
-  public FindAltsCommand() {
-    super("alts");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
-    if (args.length < 1) {
-      return false;
+    public FindAltsCommand() {
+        super("alts");
     }
 
-    if (CommandUtils.isValidNameDelimiter(args[0])) {
-      CommandUtils.handleMultipleNames(sender, commandName, args);
-      return true;
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
+        if (args.length < 1) {
+            return false;
+        }
+
+        if (CommandUtils.isValidNameDelimiter(args[0])) {
+            CommandUtils.handleMultipleNames(sender, commandName, args);
+            return true;
+        }
+
+        final String ipStr = args[0];
+        final boolean isName = !InetAddresses.isInetAddress(ipStr);
+
+        if (isName && ipStr.length() > 16) {
+            Message message = Message.get("sender.error.invalidIp");
+            message.set("ip", ipStr);
+
+            sender.sendMessage(message.toString());
+            return true;
+        }
+
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+
+            @Override
+            public void run() {
+                final long ip;
+
+                if (isName) {
+                    PlayerData srcPlayer = plugin.getPlayerStorage().retrieve(ipStr, false);
+                    if (srcPlayer == null) {
+                        sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr).toString());
+                        return;
+                    }
+
+                    ip = srcPlayer.getIp();
+                } else {
+                    ip = IPUtils.toLong(ipStr);
+                }
+
+                List<PlayerData> players = plugin.getPlayerStorage().getDuplicates(ip);
+                ArrayList<String> names = new ArrayList<>(players.size());
+
+                for (PlayerData player : players) {
+                    names.add(player.getName());
+                }
+
+                sender.sendMessage(Message.get("alts.header").set("ip", ipStr).toString());
+
+                if (names.isEmpty()) {
+                    sender.sendMessage(Message.get("none").toString());
+                    return;
+                }
+
+                sender.sendMessage(ChatColor.GOLD + StringUtils.join(names, ", "));
+            }
+        });
+
+        return true;
     }
-
-    final String ipStr = args[0];
-    final boolean isName = !InetAddresses.isInetAddress(ipStr);
-
-    if (isName && ipStr.length() > 16) {
-      Message message = Message.get("sender.error.invalidIp");
-      message.set("ip", ipStr);
-
-      sender.sendMessage(message.toString());
-      return true;
-    }
-
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        final long ip;
-
-        if (isName) {
-          PlayerData srcPlayer = plugin.getPlayerStorage().retrieve(ipStr, false);
-          if (srcPlayer == null) {
-            sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr).toString());
-            return;
-          }
-
-          ip = srcPlayer.getIp();
-        } else {
-          ip = IPUtils.toLong(ipStr);
-        }
-
-        List<PlayerData> players = plugin.getPlayerStorage().getDuplicates(ip);
-        ArrayList<String> names = new ArrayList<>(players.size());
-
-        for (PlayerData player : players) {
-          names.add(player.getName());
-        }
-
-        sender.sendMessage(Message.get("alts.header").set("ip", ipStr).toString());
-
-        if (names.isEmpty()) {
-          sender.sendMessage(Message.get("none").toString());
-          return;
-        }
-
-        sender.sendMessage(ChatColor.GOLD + StringUtils.join(names, ", "));
-      }
-    });
-
-    return true;
-  }
 }

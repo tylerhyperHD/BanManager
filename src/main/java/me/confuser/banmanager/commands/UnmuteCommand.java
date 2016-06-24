@@ -19,143 +19,150 @@ import java.util.UUID;
 
 public class UnmuteCommand extends BukkitCommand<BanManager> implements TabCompleter {
 
-  public UnmuteCommand() {
-    super("unmute");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
-    if (args.length < 1) {
-      return false;
+    public UnmuteCommand() {
+        super("unmute");
     }
 
-    if (CommandUtils.isValidNameDelimiter(args[0])) {
-      CommandUtils.handleMultipleNames(sender, commandName, args);
-      return true;
-    }
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
+        if (args.length < 1) {
+            return false;
+        }
 
-    // Check if UUID vs name
-    final String playerName = args[0];
-    final boolean isUUID = playerName.length() > 16;
-    boolean isMuted;
+        if (CommandUtils.isValidNameDelimiter(args[0])) {
+            CommandUtils.handleMultipleNames(sender, commandName, args);
+            return true;
+        }
 
-    if (isUUID) {
-      try {
-        isMuted = plugin.getPlayerMuteStorage().isMuted(UUID.fromString(playerName));
-      } catch (IllegalArgumentException e) {
-        sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
-        return true;
-      }
-    } else {
-      isMuted = plugin.getPlayerMuteStorage().isMuted(playerName);
-    }
-
-    if (!isMuted) {
-      Message message = Message.get("unmute.error.noExists");
-      message.set("player", playerName);
-
-      sender.sendMessage(message.toString());
-      return true;
-    }
-
-    final String reason = args.length > 1 ? CommandUtils.getReason(1, args).getMessage() : "";
-
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        final PlayerMuteData mute;
+        // Check if UUID vs name
+        final String playerName = args[0];
+        final boolean isUUID = playerName.length() > 16;
+        boolean isMuted;
 
         if (isUUID) {
-          mute = plugin.getPlayerMuteStorage().getMute(UUID.fromString(playerName));
+            try {
+                isMuted = plugin.getPlayerMuteStorage().isMuted(UUID.fromString(playerName));
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
+                return true;
+            }
         } else {
-          mute = plugin.getPlayerMuteStorage().getMute(playerName);
+            isMuted = plugin.getPlayerMuteStorage().isMuted(playerName);
         }
 
-        if (mute == null) {
-          sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString
-                  ());
-          return;
+        if (!isMuted) {
+            Message message = Message.get("unmute.error.noExists");
+            message.set("player", playerName);
+
+            sender.sendMessage(message.toString());
+            return true;
         }
 
-        final PlayerData actor = CommandUtils.getActor(sender);
+        final String reason = args.length > 1 ? CommandUtils.getReason(1, args).getMessage() : "";
 
-        //TODO refactor if async perm check is problem
-        if (!actor.getUUID().equals(mute.getActor().getUUID()) && !sender.hasPermission("bm.exempt.override.mute")
-                && sender.hasPermission("bm.command.unmute.own")) {
-          Message.get("unmute.error.notOwn").set("player", mute.getPlayer().getName()).sendTo(sender);
-          return;
-        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 
-        boolean unmuted;
+            @Override
+            public void run() {
+                final PlayerMuteData mute;
 
-        try {
-          unmuted = plugin.getPlayerMuteStorage().unmute(mute, actor, reason);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.get("sender.error.exception").toString());
-          e.printStackTrace();
-          return;
-        }
+                if (isUUID) {
+                    mute = plugin.getPlayerMuteStorage().getMute(UUID.fromString(playerName));
+                } else {
+                    mute = plugin.getPlayerMuteStorage().getMute(playerName);
+                }
 
-        if (!unmuted) {
-          return;
-        }
+                if (mute == null) {
+                    sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
+                    return;
+                }
 
-        Message message = Message.get("unmute.notify");
-        message
-                .set("player", mute.getPlayer().getName())
-                .set("playerId", mute.getPlayer().getUUID().toString())
-                .set("actor", actor.getName())
-                .set("reason", reason);
+                final PlayerData actor = CommandUtils.getActor(sender);
 
-        if (!sender.hasPermission("bm.notify.unmute")) {
-          message.sendTo(sender);
-        }
+                //TODO refactor if async perm check is problem
+                if (!actor.getUUID().equals(mute.getActor().getUUID()) && !sender.hasPermission("bm.exempt.override.mute")
+                        && sender.hasPermission("bm.command.unmute.own")) {
+                    Message.get("unmute.error.notOwn").set("player", mute.getPlayer().getName()).sendTo(sender);
+                    return;
+                }
 
-        CommandUtils.broadcast(message.toString(), "bm.notify.unmute");
+                boolean unmuted;
 
-        plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+                try {
+                    unmuted = plugin.getPlayerMuteStorage().unmute(mute, actor, reason);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.get("sender.error.exception").toString());
+                    e.printStackTrace();
+                    return;
+                }
 
-          @Override
-          public void run() {
-            Player bukkitPlayer = plugin.getServer().getPlayer(mute.getPlayer().getUUID());
+                if (!unmuted) {
+                    return;
+                }
 
-            if (bukkitPlayer == null) return;
-            if (bukkitPlayer.hasPermission("bm.notify.unmute")) return;
+                Message message = Message.get("unmute.notify");
+                message
+                        .set("player", mute.getPlayer().getName())
+                        .set("playerId", mute.getPlayer().getUUID().toString())
+                        .set("actor", actor.getName())
+                        .set("reason", reason);
 
-            Message.get("unmute.player")
-                    .set("displayName", bukkitPlayer.getDisplayName())
-                    .set("player", mute.getPlayer().getName())
-                    .set("playerId", mute.getPlayer().getUUID().toString())
-                    .set("reason", mute.getReason())
-                    .set("actor", actor.getName())
-                    .sendTo(bukkitPlayer);
+                if (!sender.hasPermission("bm.notify.unmute")) {
+                    message.sendTo(sender);
+                }
 
-          }
+                CommandUtils.broadcast(message.toString(), "bm.notify.unmute");
+
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Player bukkitPlayer = plugin.getServer().getPlayer(mute.getPlayer().getUUID());
+
+                        if (bukkitPlayer == null) {
+                            return;
+                        }
+                        if (bukkitPlayer.hasPermission("bm.notify.unmute")) {
+                            return;
+                        }
+
+                        Message.get("unmute.player")
+                                .set("displayName", bukkitPlayer.getDisplayName())
+                                .set("player", mute.getPlayer().getName())
+                                .set("playerId", mute.getPlayer().getUUID().toString())
+                                .set("reason", mute.getReason())
+                                .set("actor", actor.getName())
+                                .sendTo(bukkitPlayer);
+
+                    }
+                });
+            }
+
         });
-      }
 
-    });
-
-    return true;
-  }
-
-  @Override
-  public List<String> onTabComplete(CommandSender sender, Command command, String commandName, String[] args) {
-
-    ArrayList<String> mostLike = new ArrayList<>();
-
-    if (!sender.hasPermission(command.getPermission())) return mostLike;
-    if (args.length != 1) return mostLike;
-
-    String nameSearch = args[0].toLowerCase();
-
-    for (PlayerMuteData ban : plugin.getPlayerMuteStorage().getMutes().values()) {
-      if (ban.getPlayer().getName().toLowerCase().startsWith(nameSearch)) {
-        mostLike.add(ban.getPlayer().getName());
-      }
+        return true;
     }
 
-    return mostLike;
-  }
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String commandName, String[] args) {
+
+        ArrayList<String> mostLike = new ArrayList<>();
+
+        if (!sender.hasPermission(command.getPermission())) {
+            return mostLike;
+        }
+        if (args.length != 1) {
+            return mostLike;
+        }
+
+        String nameSearch = args[0].toLowerCase();
+
+        for (PlayerMuteData ban : plugin.getPlayerMuteStorage().getMutes().values()) {
+            if (ban.getPlayer().getName().toLowerCase().startsWith(nameSearch)) {
+                mostLike.add(ban.getPlayer().getName());
+            }
+        }
+
+        return mostLike;
+    }
 }

@@ -6,7 +6,7 @@ import org.bukkit.event.Cancellable;
 
 public abstract class CustomCancellableEvent extends CustomEvent implements Cancellable {
 
-  @Getter
-  @Setter
-  private boolean cancelled = false;
+    @Getter
+    @Setter
+    private boolean cancelled = false;
 }

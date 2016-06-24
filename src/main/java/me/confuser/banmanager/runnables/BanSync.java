@@ -11,85 +11,91 @@ import java.sql.SQLException;
 
 public class BanSync extends BmRunnable {
 
-  private PlayerBanStorage banStorage = plugin.getPlayerBanStorage();
+    private PlayerBanStorage banStorage = plugin.getPlayerBanStorage();
 
-  public BanSync() {
-    super("playerBans");
-  }
-
-  @Override
-  public void run() {
-    newBans();
-    newUnbans();
-  }
-
-  private void newBans() {
-
-    CloseableIterator<PlayerBanData> itr = null;
-    try {
-      itr = banStorage.findBans(lastChecked);
-
-      while (itr.hasNext()) {
-        final PlayerBanData ban = itr.next();
-
-        if (banStorage.isBanned(ban.getPlayer().getUUID()) && ban.getUpdated() < lastChecked) {
-          continue;
-        }
-
-        banStorage.addBan(ban);
-
-        plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
-
-          @Override
-          public void run() {
-            Player bukkitPlayer = plugin.getServer().getPlayer(ban.getPlayer().getUUID());
-
-            if (bukkitPlayer == null) return;
-
-            Message kickMessage = Message.get("ban.player.kick")
-                                         .set("displayName", bukkitPlayer.getDisplayName())
-                                         .set("player", ban.getPlayer().getName())
-                                         .set("reason", ban.getReason())
-                                         .set("actor", ban.getActor().getName());
-
-            bukkitPlayer.kickPlayer(kickMessage.toString());
-          }
-        });
-
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    } finally {
-      if (itr != null) itr.closeQuietly();
+    public BanSync() {
+        super("playerBans");
     }
 
-  }
-
-  private void newUnbans() {
-
-    CloseableIterator<PlayerBanRecord> itr = null;
-    try {
-      itr = plugin.getPlayerBanRecordStorage().findUnbans(lastChecked);
-
-      while (itr.hasNext()) {
-        final PlayerBanRecord ban = itr.next();
-
-        if (!banStorage.isBanned(ban.getPlayer().getUUID())) {
-          continue;
-        }
-
-        if (!ban.equalsBan(banStorage.getBan(ban.getPlayer().getUUID()))) {
-          continue;
-        }
-
-        banStorage.removeBan(ban.getPlayer().getUUID());
-
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    } finally {
-      if (itr != null) itr.closeQuietly();
+    @Override
+    public void run() {
+        newBans();
+        newUnbans();
     }
 
-  }
+    private void newBans() {
+
+        CloseableIterator<PlayerBanData> itr = null;
+        try {
+            itr = banStorage.findBans(lastChecked);
+
+            while (itr.hasNext()) {
+                final PlayerBanData ban = itr.next();
+
+                if (banStorage.isBanned(ban.getPlayer().getUUID()) && ban.getUpdated() < lastChecked) {
+                    continue;
+                }
+
+                banStorage.addBan(ban);
+
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Player bukkitPlayer = plugin.getServer().getPlayer(ban.getPlayer().getUUID());
+
+                        if (bukkitPlayer == null) {
+                            return;
+                        }
+
+                        Message kickMessage = Message.get("ban.player.kick")
+                                .set("displayName", bukkitPlayer.getDisplayName())
+                                .set("player", ban.getPlayer().getName())
+                                .set("reason", ban.getReason())
+                                .set("actor", ban.getActor().getName());
+
+                        bukkitPlayer.kickPlayer(kickMessage.toString());
+                    }
+                });
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (itr != null) {
+                itr.closeQuietly();
+            }
+        }
+
+    }
+
+    private void newUnbans() {
+
+        CloseableIterator<PlayerBanRecord> itr = null;
+        try {
+            itr = plugin.getPlayerBanRecordStorage().findUnbans(lastChecked);
+
+            while (itr.hasNext()) {
+                final PlayerBanRecord ban = itr.next();
+
+                if (!banStorage.isBanned(ban.getPlayer().getUUID())) {
+                    continue;
+                }
+
+                if (!ban.equalsBan(banStorage.getBan(ban.getPlayer().getUUID()))) {
+                    continue;
+                }
+
+                banStorage.removeBan(ban.getPlayer().getUUID());
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (itr != null) {
+                itr.closeQuietly();
+            }
+        }
+
+    }
 }

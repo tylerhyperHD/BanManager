@@ -24,93 +24,101 @@ import java.util.UUID;
 
 public class PlayerReportStorage extends BaseDaoImpl<PlayerReportData, Integer> {
 
-  private BanManager plugin = BanManager.getPlugin();
+    private BanManager plugin = BanManager.getPlugin();
 
-  public PlayerReportStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<PlayerReportData>) BanManager.getPlugin().getConfiguration()
-                                                                        .getLocalDb().getTable("playerReports"));
+    public PlayerReportStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<PlayerReportData>) BanManager.getPlugin().getConfiguration()
+                .getLocalDb().getTable("playerReports"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    } else {
-      try {
-        String update = "ALTER TABLE " + tableConfig
-                .getTableName() + " ADD COLUMN `state_id` INT(11) NOT NULL DEFAULT 1," +
-                " ADD COLUMN `assignee_id` BINARY(16)," +
-                " ADD KEY `" + tableConfig.getTableName() + "_state_id_idx` (`state_id`)," +
-                " ADD KEY `" + tableConfig.getTableName() + "_assignee_id_idx` (`assignee_id`)";
-        executeRawNoArgs(update);
-      } catch (SQLException e) {
-      }
-    }
-  }
-
-  public boolean report(PlayerReportData data, boolean isSilent) throws SQLException {
-    PlayerReportEvent event = new PlayerReportEvent(data, isSilent);
-
-    Bukkit.getServer().getPluginManager().callEvent(event);
-
-    if (event.isCancelled()) {
-      return false;
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        } else {
+            try {
+                String update = "ALTER TABLE " + tableConfig
+                        .getTableName() + " ADD COLUMN `state_id` INT(11) NOT NULL DEFAULT 1,"
+                        + " ADD COLUMN `assignee_id` BINARY(16),"
+                        + " ADD KEY `" + tableConfig.getTableName() + "_state_id_idx` (`state_id`),"
+                        + " ADD KEY `" + tableConfig.getTableName() + "_assignee_id_idx` (`assignee_id`)";
+                executeRawNoArgs(update);
+            } catch (SQLException e) {
+            }
+        }
     }
 
-    if (create(data) != 1) return false;
+    public boolean report(PlayerReportData data, boolean isSilent) throws SQLException {
+        PlayerReportEvent event = new PlayerReportEvent(data, isSilent);
 
-    Bukkit.getServer().getPluginManager().callEvent(new PlayerReportedEvent(data, isSilent));
+        Bukkit.getServer().getPluginManager().callEvent(event);
 
-    return true;
-  }
+        if (event.isCancelled()) {
+            return false;
+        }
 
-  public ReportList getReports(long page, Integer state, UUID uniqueId) throws SQLException {
-    QueryBuilder<PlayerReportData, Integer> query = queryBuilder();
+        if (create(data) != 1) {
+            return false;
+        }
 
-    if (state != null || uniqueId != null) {
-      Where<PlayerReportData, Integer> where = query.where();
+        Bukkit.getServer().getPluginManager().callEvent(new PlayerReportedEvent(data, isSilent));
 
-      if (state != null) where.eq("state_id", state);
-      if (uniqueId != null) where.and().eq("actor_id", UUIDUtils.toBytes(uniqueId));
+        return true;
     }
 
-    query.setCountOf(true);
-    PreparedQuery<PlayerReportData> preparedQuery = query.prepare();
+    public ReportList getReports(long page, Integer state, UUID uniqueId) throws SQLException {
+        QueryBuilder<PlayerReportData, Integer> query = queryBuilder();
 
-    long pageSize = 5L;
-    long count = countOf(preparedQuery);
-    long maxPage = count == 0 ? 1 : (int) Math.ceil(count / pageSize);
+        if (state != null || uniqueId != null) {
+            Where<PlayerReportData, Integer> where = query.where();
 
-    if (maxPage == 0) maxPage = 1;
+            if (state != null) {
+                where.eq("state_id", state);
+            }
+            if (uniqueId != null) {
+                where.and().eq("actor_id", UUIDUtils.toBytes(uniqueId));
+            }
+        }
 
-    long offset = (page - 1) * pageSize;
+        query.setCountOf(true);
+        PreparedQuery<PlayerReportData> preparedQuery = query.prepare();
 
-    query.setCountOf(false).offset(offset).limit(pageSize);
+        long pageSize = 5L;
+        long count = countOf(preparedQuery);
+        long maxPage = count == 0 ? 1 : (int) Math.ceil(count / pageSize);
 
-    return new ReportList(query.query(), count, maxPage);
-  }
+        if (maxPage == 0) {
+            maxPage = 1;
+        }
 
-  public ReportList getReports(long page, int state) throws SQLException {
-    return getReports(page, state, null);
-  }
+        long offset = (page - 1) * pageSize;
 
-  public int deleteAll(PlayerData player) throws SQLException {
-    DeleteBuilder<PlayerReportData, Integer> builder = deleteBuilder();
+        query.setCountOf(false).offset(offset).limit(pageSize);
 
-    Where<PlayerReportData, Integer> where = builder.where();
-    where.eq("player_id", player);
-
-    builder.setWhere(where);
-
-    return builder.delete();
-  }
-
-  public boolean isRecentlyReported(PlayerData player) throws SQLException {
-    if (plugin.getConfiguration().getReportCooldown() == 0) {
-      return false;
+        return new ReportList(query.query(), count, maxPage);
     }
 
-    return queryBuilder().where()
-                         .eq("player_id", player).and()
-                         .ge("created", (System.currentTimeMillis() / 1000L) - plugin.getConfiguration()
-                                                                                     .getReportCooldown())
-                         .countOf() > 0;
-  }
+    public ReportList getReports(long page, int state) throws SQLException {
+        return getReports(page, state, null);
+    }
+
+    public int deleteAll(PlayerData player) throws SQLException {
+        DeleteBuilder<PlayerReportData, Integer> builder = deleteBuilder();
+
+        Where<PlayerReportData, Integer> where = builder.where();
+        where.eq("player_id", player);
+
+        builder.setWhere(where);
+
+        return builder.delete();
+    }
+
+    public boolean isRecentlyReported(PlayerData player) throws SQLException {
+        if (plugin.getConfiguration().getReportCooldown() == 0) {
+            return false;
+        }
+
+        return queryBuilder().where()
+                .eq("player_id", player).and()
+                .ge("created", (System.currentTimeMillis() / 1000L) - plugin.getConfiguration()
+                        .getReportCooldown())
+                .countOf() > 0;
+    }
 }

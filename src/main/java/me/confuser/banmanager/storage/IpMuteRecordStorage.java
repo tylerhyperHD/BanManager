@@ -18,49 +18,51 @@ import java.sql.SQLException;
 
 public class IpMuteRecordStorage extends BaseDaoImpl<IpMuteRecord, Integer> {
 
-  public IpMuteRecordStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<IpMuteRecord>) BanManager.getPlugin().getConfiguration().getLocalDb()
-                                                                   .getTable("ipMuteRecords"));
+    public IpMuteRecordStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<IpMuteRecord>) BanManager.getPlugin().getConfiguration().getLocalDb()
+                .getTable("ipMuteRecords"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    }
-  }
-
-  public void addRecord(IpMuteData mute, PlayerData actor, String reason) throws SQLException {
-    create(new IpMuteRecord(mute, actor, reason));
-  }
-
-  public CloseableIterator<IpMuteRecord> findUnmutes(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        }
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public void addRecord(IpMuteData mute, PlayerData actor, String reason) throws SQLException {
+        create(new IpMuteRecord(mute, actor, reason));
+    }
 
-    QueryBuilder<IpMuteRecord, Integer> query = queryBuilder();
-    Where<IpMuteRecord, Integer> where = query.where();
+    public CloseableIterator<IpMuteRecord> findUnmutes(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    where.ge("created", checkTime);
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    query.setWhere(where);
+        QueryBuilder<IpMuteRecord, Integer> query = queryBuilder();
+        Where<IpMuteRecord, Integer> where = query.where();
 
-    return query.iterator();
+        where.ge("created", checkTime);
 
-  }
+        query.setWhere(where);
 
-  public long getCount(long ip) throws SQLException {
-    return queryBuilder().where().eq("ip", ip).countOf();
-  }
+        return query.iterator();
 
-  public CloseableIterator<IpMuteRecord> getRecords(long ip) throws SQLException {
-    return queryBuilder().where().eq("ip", ip).iterator();
-  }
+    }
 
-  public void purge(CleanUp cleanup) throws SQLException {
-    if (cleanup.getDays() == 0) return;
+    public long getCount(long ip) throws SQLException {
+        return queryBuilder().where().eq("ip", ip).countOf();
+    }
 
-    updateRaw("DELETE FROM " + getTableInfo().getTableName() + " WHERE created < UNIX_TIMESTAMP(DATE_SUB(NOW(), " +
-            "INTERVAL " + cleanup.getDays() + " DAY))");
-  }
+    public CloseableIterator<IpMuteRecord> getRecords(long ip) throws SQLException {
+        return queryBuilder().where().eq("ip", ip).iterator();
+    }
+
+    public void purge(CleanUp cleanup) throws SQLException {
+        if (cleanup.getDays() == 0) {
+            return;
+        }
+
+        updateRaw("DELETE FROM " + getTableInfo().getTableName() + " WHERE created < UNIX_TIMESTAMP(DATE_SUB(NOW(), "
+                + "INTERVAL " + cleanup.getDays() + " DAY))");
+    }
 }

@@ -5,19 +5,19 @@ import com.j256.ormlite.field.types.ByteArrayType;
 
 public class ByteArray extends ByteArrayType {
 
-      private static final ByteArray singleTon = new ByteArray();
+    private static final ByteArray singleTon = new ByteArray();
 
-      protected ByteArray() {
-            super(SqlType.BYTE_ARRAY, new Class<?>[0]);
-      }
+    protected ByteArray() {
+        super(SqlType.BYTE_ARRAY, new Class<?>[0]);
+    }
 
-      @Override
-      public boolean isAppropriateId() {
-            return true;
-      }
+    @Override
+    public boolean isAppropriateId() {
+        return true;
+    }
 
-      /* This cannot be lombok. */
-      public static ByteArray getSingleton() {
-            return singleTon;
-      }
+    /* This cannot be lombok. */
+    public static ByteArray getSingleton() {
+        return singleTon;
+    }
 }

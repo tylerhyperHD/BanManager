@@ -8,34 +8,34 @@ import me.confuser.bukkitutil.configs.Config;
 
 public class ConsoleConfig extends Config<BanManager> {
 
-      @Getter
-      private String name;
-      @Getter
-      private UUID uuid;
+    @Getter
+    private String name;
+    @Getter
+    private UUID uuid;
 
-      public ConsoleConfig() {
-            super("console.yml");
-      }
+    public ConsoleConfig() {
+        super("console.yml");
+    }
 
-      @Override
-      public void afterLoad() {
-            if (conf.getString("uuid", "0").equals("0")) {
-                  uuid = UUID.randomUUID();
-                  save();
-            } else {
-                  uuid = UUID.fromString(conf.getString("uuid"));
-            }
+    @Override
+    public void afterLoad() {
+        if (conf.getString("uuid", "0").equals("0")) {
+            uuid = UUID.randomUUID();
+            save();
+        } else {
+            uuid = UUID.fromString(conf.getString("uuid"));
+        }
 
-            name = conf.getString("name");
-      }
+        name = conf.getString("name");
+    }
 
-      @Override
-      public void onSave() {
-            if (uuid == null) {
-                  return;
-            }
+    @Override
+    public void onSave() {
+        if (uuid == null) {
+            return;
+        }
 
-            conf.set("uuid", uuid.toString());
-            conf.set("name", name);
-      }
+        conf.set("uuid", uuid.toString());
+        conf.set("name", name);
+    }
 }

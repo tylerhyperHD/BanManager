@@ -13,113 +13,119 @@ import java.sql.SQLException;
 
 public class AssignSubCommand extends SubCommand<BanManager> {
 
-  public AssignSubCommand() {
-    super("assign");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, final String[] args) {
-    if (args.length == 0) return false;
-    if (!(sender instanceof Player) && args.length != 2) return false;
-
-    if (args.length != 1 && !sender.hasPermission("bm.command.report.assign.other")) {
-      Message.get("sender.error.noPermission").sendTo(sender);
-      return true;
+    public AssignSubCommand() {
+        super("assign");
     }
 
-    final int id;
+    @Override
+    public boolean onCommand(final CommandSender sender, final String[] args) {
+        if (args.length == 0) {
+            return false;
+        }
+        if (!(sender instanceof Player) && args.length != 2) {
+            return false;
+        }
 
-    try {
-      id = Integer.parseInt(args[0]);
-    } catch (NumberFormatException e) {
-      Message.get("report.tp.error.invalidId").set("id", args[0]).sendTo(sender);
-      return true;
-    }
+        if (args.length != 1 && !sender.hasPermission("bm.command.report.assign.other")) {
+            Message.get("sender.error.noPermission").sendTo(sender);
+            return true;
+        }
 
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        final PlayerReportData data;
+        final int id;
 
         try {
-          data = plugin.getPlayerReportStorage().queryForId(id);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.getString("sender.error.exception"));
-          e.printStackTrace();
-          return;
+            id = Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+            Message.get("report.tp.error.invalidId").set("id", args[0]).sendTo(sender);
+            return true;
         }
 
-        if (data == null) {
-          sender.sendMessage(Message.getString("report.error.notFound"));
-          return;
-        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 
-        final PlayerData player;
-        if (args.length == 2) {
-          player = plugin.getPlayerStorage().retrieve(args[1], false);
-        } else {
-          try {
-            player = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
-          } catch (SQLException e) {
-            sender.sendMessage(Message.getString("sender.error.exception"));
-            e.printStackTrace();
-            return;
-          }
-        }
+            @Override
+            public void run() {
+                final PlayerReportData data;
 
-        if (player == null) {
-          sender.sendMessage(Message.get("sender.error.notFound").toString());
-          return;
-        }
+                try {
+                    data = plugin.getPlayerReportStorage().queryForId(id);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.getString("sender.error.exception"));
+                    e.printStackTrace();
+                    return;
+                }
 
-        data.setAssignee(player);
+                if (data == null) {
+                    sender.sendMessage(Message.getString("report.error.notFound"));
+                    return;
+                }
 
-        try {
-          data.setState(plugin.getReportStateStorage().queryForId(2));
-          plugin.getPlayerReportStorage().update(data);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.getString("sender.error.exception"));
-          e.printStackTrace();
-          return;
-        }
+                final PlayerData player;
+                if (args.length == 2) {
+                    player = plugin.getPlayerStorage().retrieve(args[1], false);
+                } else {
+                    try {
+                        player = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes((Player) sender));
+                    } catch (SQLException e) {
+                        sender.sendMessage(Message.getString("sender.error.exception"));
+                        e.printStackTrace();
+                        return;
+                    }
+                }
 
-        Message.get("report.assign.player")
-               .set("id", data.getId())
-               .set("player", player.getName())
-               .sendTo(sender);
+                if (player == null) {
+                    sender.sendMessage(Message.get("sender.error.notFound").toString());
+                    return;
+                }
 
-        plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+                data.setAssignee(player);
 
-          @Override
-          public void run() {
-            Player bukkitPlayer = plugin.getServer().getPlayer(player.getUUID());
+                try {
+                    data.setState(plugin.getReportStateStorage().queryForId(2));
+                    plugin.getPlayerReportStorage().update(data);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.getString("sender.error.exception"));
+                    e.printStackTrace();
+                    return;
+                }
 
-            if (bukkitPlayer == null) return;
+                Message.get("report.assign.player")
+                        .set("id", data.getId())
+                        .set("player", player.getName())
+                        .sendTo(sender);
 
-            Message.get("report.assign.notify")
-                   .set("id", data.getId())
-                   .set("displayName", bukkitPlayer.getDisplayName())
-                   .set("player", player.getName())
-                   .set("playerId", player.getUUID().toString())
-                   .set("reason", data.getReason())
-                   .set("actor", sender.getName()).sendTo(bukkitPlayer);
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
 
-          }
+                    @Override
+                    public void run() {
+                        Player bukkitPlayer = plugin.getServer().getPlayer(player.getUUID());
+
+                        if (bukkitPlayer == null) {
+                            return;
+                        }
+
+                        Message.get("report.assign.notify")
+                                .set("id", data.getId())
+                                .set("displayName", bukkitPlayer.getDisplayName())
+                                .set("player", player.getName())
+                                .set("playerId", player.getUUID().toString())
+                                .set("reason", data.getReason())
+                                .set("actor", sender.getName()).sendTo(bukkitPlayer);
+
+                    }
+                });
+            }
         });
-      }
-    });
 
-    return true;
-  }
+        return true;
+    }
 
-  @Override
-  public String getHelp() {
-    return "<id> [player]";
-  }
+    @Override
+    public String getHelp() {
+        return "<id> [player]";
+    }
 
-  @Override
-  public String getPermission() {
-    return "command.report.assign";
-  }
+    @Override
+    public String getPermission() {
+        return "command.report.assign";
+    }
 }

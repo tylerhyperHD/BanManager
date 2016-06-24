@@ -11,67 +11,71 @@ import java.sql.SQLException;
 
 public class MuteSync extends BmRunnable {
 
-  private PlayerMuteStorage muteStorage = plugin.getPlayerMuteStorage();
+    private PlayerMuteStorage muteStorage = plugin.getPlayerMuteStorage();
 
-  public MuteSync() {
-    super("playerMutes");
-  }
-
-  @Override
-  public void run() {
-    newMutes();
-    newUnmutes();
-  }
-
-  private void newMutes() {
-
-    CloseableIterator<PlayerMuteData> itr = null;
-    try {
-      itr = muteStorage.findMutes(lastChecked);
-
-      while (itr.hasNext()) {
-        final PlayerMuteData mute = itr.next();
-
-        if (muteStorage.isMuted(mute.getPlayer().getUUID()) && mute.getUpdated() < lastChecked) {
-          continue;
-        }
-
-        muteStorage.addMute(mute);
-
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    } finally {
-      if (itr != null) itr.closeQuietly();
+    public MuteSync() {
+        super("playerMutes");
     }
 
-  }
-
-  private void newUnmutes() {
-
-    CloseableIterator<PlayerMuteRecord> itr = null;
-    try {
-      itr = plugin.getPlayerMuteRecordStorage().findUnmutes(lastChecked);
-
-      while (itr.hasNext()) {
-        final PlayerMuteRecord mute = itr.next();
-
-        if (!muteStorage.isMuted(mute.getPlayer().getUUID())) {
-          continue;
-        }
-
-        if (!mute.equalsMute(muteStorage.getMute(mute.getPlayer().getUUID()))) {
-          continue;
-        }
-
-        muteStorage.removeMute(mute.getPlayer().getUUID());
-
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    } finally {
-      if (itr != null) itr.closeQuietly();
+    @Override
+    public void run() {
+        newMutes();
+        newUnmutes();
     }
 
-  }
+    private void newMutes() {
+
+        CloseableIterator<PlayerMuteData> itr = null;
+        try {
+            itr = muteStorage.findMutes(lastChecked);
+
+            while (itr.hasNext()) {
+                final PlayerMuteData mute = itr.next();
+
+                if (muteStorage.isMuted(mute.getPlayer().getUUID()) && mute.getUpdated() < lastChecked) {
+                    continue;
+                }
+
+                muteStorage.addMute(mute);
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (itr != null) {
+                itr.closeQuietly();
+            }
+        }
+
+    }
+
+    private void newUnmutes() {
+
+        CloseableIterator<PlayerMuteRecord> itr = null;
+        try {
+            itr = plugin.getPlayerMuteRecordStorage().findUnmutes(lastChecked);
+
+            while (itr.hasNext()) {
+                final PlayerMuteRecord mute = itr.next();
+
+                if (!muteStorage.isMuted(mute.getPlayer().getUUID())) {
+                    continue;
+                }
+
+                if (!mute.equalsMute(muteStorage.getMute(mute.getPlayer().getUUID()))) {
+                    continue;
+                }
+
+                muteStorage.removeMute(mute.getPlayer().getUUID());
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (itr != null) {
+                itr.closeQuietly();
+            }
+        }
+
+    }
 }

@@ -16,128 +16,130 @@ import java.util.UUID;
 
 public class ClearCommand extends AutoCompleteNameTabCommand<BanManager> {
 
-  private static HashSet<String> types = new HashSet<String>() {
+    private static HashSet<String> types = new HashSet<String>() {
 
-    {
-      add("banrecords");
-      add("kicks");
-      add("muterecords");
-      add("notes");
-      add("reports");
-      add("warnings");
-    }
-  };
+        {
+            add("banrecords");
+            add("kicks");
+            add("muterecords");
+            add("notes");
+            add("reports");
+            add("warnings");
+        }
+    };
 
-  public ClearCommand() {
-    super("bmclear");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, final String[] args) {
-
-    if (args.length == 0) return false;
-
-    if (CommandUtils.isValidNameDelimiter(args[0])) {
-      CommandUtils.handleMultipleNames(sender, commandName, args);
-      return true;
+    public ClearCommand() {
+        super("bmclear");
     }
 
-    // Check if UUID vs name
-    final String playerName = args[0];
-    final boolean isUUID = playerName.length() > 16;
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, final String[] args) {
 
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        final PlayerData player;
-
-        if (isUUID) {
-          try {
-            player = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(UUID.fromString(playerName)));
-          } catch (Exception e) {
-            sender.sendMessage(Message.get("sender.error.exception").toString());
-            e.printStackTrace();
-            return;
-          }
-        } else {
-          player = plugin.getPlayerStorage().retrieve(playerName, true);
+        if (args.length == 0) {
+            return false;
         }
 
-        if (player == null) {
-          sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
-          return;
+        if (CommandUtils.isValidNameDelimiter(args[0])) {
+            CommandUtils.handleMultipleNames(sender, commandName, args);
+            return true;
         }
 
-        ArrayList<String> types = new ArrayList<>();
+        // Check if UUID vs name
+        final String playerName = args[0];
+        final boolean isUUID = playerName.length() > 16;
 
-        if (args.length == 1) {
-          // Clear everything
-          for (String type : ClearCommand.types) {
-            if (!sender.hasPermission("bm.command.clear." + type)) {
-              Message.get("sender.error.noPermission").sendTo(sender);
-              return;
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+
+            @Override
+            public void run() {
+                final PlayerData player;
+
+                if (isUUID) {
+                    try {
+                        player = plugin.getPlayerStorage().queryForId(UUIDUtils.toBytes(UUID.fromString(playerName)));
+                    } catch (Exception e) {
+                        sender.sendMessage(Message.get("sender.error.exception").toString());
+                        e.printStackTrace();
+                        return;
+                    }
+                } else {
+                    player = plugin.getPlayerStorage().retrieve(playerName, true);
+                }
+
+                if (player == null) {
+                    sender.sendMessage(Message.get("sender.error.notFound").set("player", playerName).toString());
+                    return;
+                }
+
+                ArrayList<String> types = new ArrayList<>();
+
+                if (args.length == 1) {
+                    // Clear everything
+                    for (String type : ClearCommand.types) {
+                        if (!sender.hasPermission("bm.command.clear." + type)) {
+                            Message.get("sender.error.noPermission").sendTo(sender);
+                            return;
+                        }
+                    }
+                    types.addAll(ClearCommand.types);
+                } else if (args.length == 2) {
+                    String type = args[1].toLowerCase();
+
+                    if (!ClearCommand.types.contains(type)) {
+                        Message.get("bmclear.error.invalid").sendTo(sender);
+                        return;
+                    } else if (sender.hasPermission("bm.command.clear." + type)) {
+                        types.add(type);
+                    }
+                }
+
+                for (String type : types) {
+                    try {
+                        DeleteBuilder builder = null;
+                        switch (type) {
+                            case "banrecords":
+                                builder = plugin.getPlayerBanRecordStorage().deleteBuilder();
+                                break;
+
+                            case "kicks":
+                                builder = plugin.getPlayerKickStorage().deleteBuilder();
+                                break;
+
+                            case "muterecords":
+                                builder = plugin.getPlayerMuteRecordStorage().deleteBuilder();
+                                break;
+
+                            case "notes":
+                                builder = plugin.getPlayerNoteStorage().deleteBuilder();
+                                break;
+
+                            case "reports":
+                                builder = plugin.getPlayerReportStorage().deleteBuilder();
+                                break;
+
+                            case "warnings":
+                                builder = plugin.getPlayerWarnStorage().deleteBuilder();
+                                break;
+                        }
+
+                        builder.where().eq("player_id", player);
+                        builder.delete();
+                    } catch (SQLException e) {
+                        sender.sendMessage(Message.get("sender.error.exception").toString());
+                        e.printStackTrace();
+                        return;
+                    }
+
+                    Message.get("bmclear.notify")
+                            .set("type", type)
+                            .set("player", player.getName())
+                            .set("playerId", player.getUUID().toString())
+                            .sendTo(sender);
+                }
             }
-          }
-          types.addAll(ClearCommand.types);
-        } else if (args.length == 2) {
-          String type = args[1].toLowerCase();
+        });
 
-          if (!ClearCommand.types.contains(type)) {
-            Message.get("bmclear.error.invalid").sendTo(sender);
-            return;
-          } else if (sender.hasPermission("bm.command.clear." + type)) {
-            types.add(type);
-          }
-        }
-
-        for (String type : types) {
-          try {
-            DeleteBuilder builder = null;
-            switch (type) {
-              case "banrecords":
-                builder = plugin.getPlayerBanRecordStorage().deleteBuilder();
-                break;
-
-              case "kicks":
-                builder = plugin.getPlayerKickStorage().deleteBuilder();
-                break;
-
-              case "muterecords":
-                builder = plugin.getPlayerMuteRecordStorage().deleteBuilder();
-                break;
-
-              case "notes":
-                builder = plugin.getPlayerNoteStorage().deleteBuilder();
-                break;
-
-              case "reports":
-                builder = plugin.getPlayerReportStorage().deleteBuilder();
-                break;
-
-              case "warnings":
-                builder = plugin.getPlayerWarnStorage().deleteBuilder();
-                break;
-            }
-
-            builder.where().eq("player_id", player);
-            builder.delete();
-          } catch (SQLException e) {
-            sender.sendMessage(Message.get("sender.error.exception").toString());
-            e.printStackTrace();
-            return;
-          }
-
-          Message.get("bmclear.notify")
-                 .set("type", type)
-                 .set("player", player.getName())
-                 .set("playerId", player.getUUID().toString())
-                 .sendTo(sender);
-        }
-      }
-    });
-
-    return true;
-  }
+        return true;
+    }
 
 }

@@ -7,20 +7,20 @@ import lombok.Getter;
 @DatabaseTable
 public class ReportState {
 
-  @DatabaseField(generatedId = true)
-  @Getter
-  private int id;
+    @DatabaseField(generatedId = true)
+    @Getter
+    private int id;
 
-  @DatabaseField(canBeNull = false)
-  @Getter
-  private String name;
+    @DatabaseField(canBeNull = false)
+    @Getter
+    private String name;
 
-  ReportState() {
+    ReportState() {
 
-  }
+    }
 
-  public ReportState(String name) {
-    this.name = name;
-  }
+    public ReportState(String name) {
+        this.name = name;
+    }
 
 }

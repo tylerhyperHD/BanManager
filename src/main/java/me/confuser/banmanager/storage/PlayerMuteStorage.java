@@ -24,151 +24,153 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerMuteStorage extends BaseDaoImpl<PlayerMuteData, Integer> {
 
-  private BanManager plugin = BanManager.getPlugin();
-  private ConcurrentHashMap<UUID, PlayerMuteData> mutes = new ConcurrentHashMap<>();
+    private BanManager plugin = BanManager.getPlugin();
+    private ConcurrentHashMap<UUID, PlayerMuteData> mutes = new ConcurrentHashMap<>();
 
-  public PlayerMuteStorage(ConnectionSource connection) throws SQLException {
-    super(connection, (DatabaseTableConfig<PlayerMuteData>) BanManager.getPlugin().getConfiguration()
-                                                                      .getLocalDb().getTable("playerMutes"));
+    public PlayerMuteStorage(ConnectionSource connection) throws SQLException {
+        super(connection, (DatabaseTableConfig<PlayerMuteData>) BanManager.getPlugin().getConfiguration()
+                .getLocalDb().getTable("playerMutes"));
 
-    if (!this.isTableExists()) {
-      TableUtils.createTable(connection, tableConfig);
-    } else {
-      // Attempt to add new columns
-      try {
-        String update = "ALTER TABLE " + tableConfig
-                .getTableName() + " ADD COLUMN `soft` TINYINT(1)," +
-                " ADD KEY `" + tableConfig.getTableName() + "_soft_idx` (`soft`)";
-        executeRawNoArgs(update);
-      } catch (SQLException e) {
-      }
+        if (!this.isTableExists()) {
+            TableUtils.createTable(connection, tableConfig);
+        } else {
+            // Attempt to add new columns
+            try {
+                String update = "ALTER TABLE " + tableConfig
+                        .getTableName() + " ADD COLUMN `soft` TINYINT(1),"
+                        + " ADD KEY `" + tableConfig.getTableName() + "_soft_idx` (`soft`)";
+                executeRawNoArgs(update);
+            } catch (SQLException e) {
+            }
+        }
+
+        CloseableIterator<PlayerMuteData> itr = iterator();
+
+        while (itr.hasNext()) {
+            PlayerMuteData mute = itr.next();
+
+            try {
+                mutes.put(mute.getPlayer().getUUID(), mute);
+            } catch (Exception e) {
+                plugin.getLogger().severe("Failed to retrieve mute id " + mute.getId() + " due to missing player data");
+            }
+        }
+
+        itr.close();
+
+        plugin.getLogger().info("Loaded " + mutes.size() + " mutes into memory");
     }
 
-    CloseableIterator<PlayerMuteData> itr = iterator();
+    public ConcurrentHashMap<UUID, PlayerMuteData> getMutes() {
+        return mutes;
+    }
 
-    while (itr.hasNext()) {
-      PlayerMuteData mute = itr.next();
+    public boolean isMuted(UUID uuid) {
+        return mutes.get(uuid) != null;
+    }
 
-      try {
+    public PlayerMuteData retrieveMute(UUID uuid) throws SQLException {
+        List<PlayerMuteData> mutes = queryForEq("player_id", UUIDUtils.toBytes(uuid));
+
+        if (mutes.isEmpty()) {
+            return null;
+        }
+
+        return mutes.get(0);
+    }
+
+    public boolean isMuted(String playerName) {
+        for (PlayerMuteData mute : mutes.values()) {
+            if (mute.getPlayer().getName().equalsIgnoreCase(playerName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public PlayerMuteData getMute(UUID uuid) {
+        return mutes.get(uuid);
+    }
+
+    public PlayerMuteData getMute(String playerName) {
+        for (PlayerMuteData mute : mutes.values()) {
+            if (mute.getPlayer().getName().equalsIgnoreCase(playerName)) {
+                return mute;
+            }
+        }
+
+        return null;
+    }
+
+    public void addMute(PlayerMuteData mute) {
         mutes.put(mute.getPlayer().getUUID(), mute);
-      } catch (Exception e) {
-        plugin.getLogger().severe("Failed to retrieve mute id " + mute.getId() + " due to missing player data");
-      }
+
+        if (plugin.getConfiguration().isBroadcastOnSync()) {
+            Bukkit.getServer().getPluginManager().callEvent(new PlayerMutedEvent(mute, false));
+        }
     }
 
-    itr.close();
+    public boolean mute(PlayerMuteData mute, boolean silent) throws SQLException {
+        PlayerMuteEvent event = new PlayerMuteEvent(mute, silent);
+        Bukkit.getServer().getPluginManager().callEvent(event);
 
-    plugin.getLogger().info("Loaded " + mutes.size() + " mutes into memory");
-  }
+        if (event.isCancelled()) {
+            return false;
+        }
 
-  public ConcurrentHashMap<UUID, PlayerMuteData> getMutes() {
-    return mutes;
-  }
+        create(mute);
+        mutes.put(mute.getPlayer().getUUID(), mute);
 
-  public boolean isMuted(UUID uuid) {
-    return mutes.get(uuid) != null;
-  }
+        Bukkit.getServer().getPluginManager().callEvent(new PlayerMutedEvent(mute, event.isSilent()));
 
-  public PlayerMuteData retrieveMute(UUID uuid) throws SQLException {
-    List<PlayerMuteData> mutes = queryForEq("player_id", UUIDUtils.toBytes(uuid));
-
-    if (mutes.isEmpty()) return null;
-
-    return mutes.get(0);
-  }
-
-  public boolean isMuted(String playerName) {
-    for (PlayerMuteData mute : mutes.values()) {
-      if (mute.getPlayer().getName().equalsIgnoreCase(playerName)) {
         return true;
-      }
     }
 
-    return false;
-  }
-
-  public PlayerMuteData getMute(UUID uuid) {
-    return mutes.get(uuid);
-  }
-
-  public PlayerMuteData getMute(String playerName) {
-    for (PlayerMuteData mute : mutes.values()) {
-      if (mute.getPlayer().getName().equalsIgnoreCase(playerName)) {
-        return mute;
-      }
+    public void removeMute(UUID uuid) {
+        mutes.remove(uuid);
     }
 
-    return null;
-  }
-
-  public void addMute(PlayerMuteData mute) {
-    mutes.put(mute.getPlayer().getUUID(), mute);
-
-    if (plugin.getConfiguration().isBroadcastOnSync()) {
-      Bukkit.getServer().getPluginManager().callEvent(new PlayerMutedEvent(mute, false));
-    }
-  }
-
-  public boolean mute(PlayerMuteData mute, boolean silent) throws SQLException {
-    PlayerMuteEvent event = new PlayerMuteEvent(mute, silent);
-    Bukkit.getServer().getPluginManager().callEvent(event);
-
-    if (event.isCancelled()) {
-      return false;
+    public void removeMute(PlayerMuteData mute) {
+        removeMute(mute.getPlayer().getUUID());
     }
 
-    create(mute);
-    mutes.put(mute.getPlayer().getUUID(), mute);
-
-    Bukkit.getServer().getPluginManager().callEvent(new PlayerMutedEvent(mute, event.isSilent()));
-
-    return true;
-  }
-
-  public void removeMute(UUID uuid) {
-    mutes.remove(uuid);
-  }
-
-  public void removeMute(PlayerMuteData mute) {
-    removeMute(mute.getPlayer().getUUID());
-  }
-
-  public boolean unmute(PlayerMuteData mute, PlayerData actor) throws SQLException {
-    return unmute(mute, actor, "");
-  }
-
-  public boolean unmute(PlayerMuteData mute, PlayerData actor, String reason) throws SQLException {
-    PlayerUnmuteEvent event = new PlayerUnmuteEvent(mute, actor, reason);
-    Bukkit.getServer().getPluginManager().callEvent(event);
-
-    if (event.isCancelled()) {
-      return false;
+    public boolean unmute(PlayerMuteData mute, PlayerData actor) throws SQLException {
+        return unmute(mute, actor, "");
     }
 
-    delete(mute);
-    mutes.remove(mute.getPlayer().getUUID());
+    public boolean unmute(PlayerMuteData mute, PlayerData actor, String reason) throws SQLException {
+        PlayerUnmuteEvent event = new PlayerUnmuteEvent(mute, actor, reason);
+        Bukkit.getServer().getPluginManager().callEvent(event);
 
-    plugin.getPlayerMuteRecordStorage().addRecord(mute, actor, reason);
+        if (event.isCancelled()) {
+            return false;
+        }
 
-    return true;
-  }
+        delete(mute);
+        mutes.remove(mute.getPlayer().getUUID());
 
-  public CloseableIterator<PlayerMuteData> findMutes(long fromTime) throws SQLException {
-    if (fromTime == 0) {
-      return iterator();
+        plugin.getPlayerMuteRecordStorage().addRecord(mute, actor, reason);
+
+        return true;
     }
 
-    long checkTime = fromTime + DateUtils.getTimeDiff();
+    public CloseableIterator<PlayerMuteData> findMutes(long fromTime) throws SQLException {
+        if (fromTime == 0) {
+            return iterator();
+        }
 
-    QueryBuilder<PlayerMuteData, Integer> query = queryBuilder();
-    Where<PlayerMuteData, Integer> where = query.where();
-    where
-            .ge("created", checkTime)
-            .or()
-            .ge("updated", checkTime);
+        long checkTime = fromTime + DateUtils.getTimeDiff();
 
-    query.setWhere(where);
+        QueryBuilder<PlayerMuteData, Integer> query = queryBuilder();
+        Where<PlayerMuteData, Integer> where = query.where();
+        where
+                .ge("created", checkTime)
+                .or()
+                .ge("updated", checkTime);
 
-    return query.iterator();
-  }
+        query.setWhere(where);
+
+        return query.iterator();
+    }
 }

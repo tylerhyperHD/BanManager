@@ -16,133 +16,139 @@ import java.sql.SQLException;
 
 public class MuteIpCommand extends AutoCompleteNameTabCommand<BanManager> {
 
-  public MuteIpCommand() {
-    super("muteip");
-  }
-
-  @Override
-  public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
-    CommandParser parser = new CommandParser(args, 1);
-    args = parser.getArgs();
-    final boolean isSilent = parser.isSilent();
-
-    if (isSilent && !sender.hasPermission(command.getPermission() + ".silent")) {
-      sender.sendMessage(Message.getString("sender.error.noPermission"));
-      return true;
+    public MuteIpCommand() {
+        super("muteip");
     }
 
-    final boolean isSoft = parser.isSoft();
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String commandName, String[] args) {
+        CommandParser parser = new CommandParser(args, 1);
+        args = parser.getArgs();
+        final boolean isSilent = parser.isSilent();
 
-    if (isSoft && !sender.hasPermission(command.getPermission() + ".soft")) {
-      sender.sendMessage(Message.getString("sender.error.noPermission"));
-      return true;
-    }
-
-    if (args.length < 2) {
-      return false;
-    }
-
-    if (CommandUtils.isValidNameDelimiter(args[0])) {
-      CommandUtils.handleMultipleNames(sender, commandName, args);
-      return true;
-    }
-
-    final String ipStr = args[0];
-    final boolean isName = !InetAddresses.isInetAddress(ipStr);
-
-    if (isName && ipStr.length() > 16) {
-      Message message = Message.get("sender.error.invalidIp");
-      message.set("ip", ipStr);
-
-      sender.sendMessage(message.toString());
-      return true;
-    }
-
-    if (isName) {
-      Player onlinePlayer = plugin.getServer().getPlayer(ipStr);
-
-      if (onlinePlayer != null && !sender.hasPermission("bm.exempt.override.muteip")
-              && onlinePlayer.hasPermission("bm.exempt.muteip")) {
-        Message.get("sender.error.exempt").set("player", onlinePlayer.getName()).sendTo(sender);
-        return true;
-      }
-    }
-
-    final String reason = parser.getReason().getMessage();
-
-    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-
-      @Override
-      public void run() {
-        final Long ip = CommandUtils.getIp(ipStr);
-
-        if (ip == null) {
-          sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr).toString());
-          return;
+        if (isSilent && !sender.hasPermission(command.getPermission() + ".silent")) {
+            sender.sendMessage(Message.getString("sender.error.noPermission"));
+            return true;
         }
 
-        final boolean isMuted = plugin.getIpMuteStorage().isMuted(ip);
+        final boolean isSoft = parser.isSoft();
 
-        if (isMuted && !sender.hasPermission("bm.command.muteip.override")) {
-          Message message = Message.get("muteip.error.exists");
-          message.set("ip", ipStr);
-
-          sender.sendMessage(message.toString());
-          return;
+        if (isSoft && !sender.hasPermission(command.getPermission() + ".soft")) {
+            sender.sendMessage(Message.getString("sender.error.noPermission"));
+            return true;
         }
 
-        final PlayerData actor = CommandUtils.getActor(sender);
+        if (args.length < 2) {
+            return false;
+        }
 
-        if (actor == null) return;
+        if (CommandUtils.isValidNameDelimiter(args[0])) {
+            CommandUtils.handleMultipleNames(sender, commandName, args);
+            return true;
+        }
 
-        if (isMuted) {
-          IpMuteData mute = plugin.getIpMuteStorage().getMute(ip);
+        final String ipStr = args[0];
+        final boolean isName = !InetAddresses.isInetAddress(ipStr);
 
-          if (mute != null) {
-            try {
-              plugin.getIpMuteStorage().unmute(mute, actor);
-            } catch (SQLException e) {
-              sender.sendMessage(Message.get("sender.error.exception").toString());
-              e.printStackTrace();
-              return;
+        if (isName && ipStr.length() > 16) {
+            Message message = Message.get("sender.error.invalidIp");
+            message.set("ip", ipStr);
+
+            sender.sendMessage(message.toString());
+            return true;
+        }
+
+        if (isName) {
+            Player onlinePlayer = plugin.getServer().getPlayer(ipStr);
+
+            if (onlinePlayer != null && !sender.hasPermission("bm.exempt.override.muteip")
+                    && onlinePlayer.hasPermission("bm.exempt.muteip")) {
+                Message.get("sender.error.exempt").set("player", onlinePlayer.getName()).sendTo(sender);
+                return true;
             }
-          }
         }
 
-        final IpMuteData mute = new IpMuteData(ip, actor, reason, isSoft);
-        boolean created;
+        final String reason = parser.getReason().getMessage();
 
-        try {
-          created = plugin.getIpMuteStorage().mute(mute, isSilent);
-        } catch (SQLException e) {
-          sender.sendMessage(Message.get("sender.error.exception").toString());
-          e.printStackTrace();
-          return;
-        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 
-        if (!created) return;
-        if (isSoft) return;
+            @Override
+            public void run() {
+                final Long ip = CommandUtils.getIp(ipStr);
 
-        // Find online players
-        plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+                if (ip == null) {
+                    sender.sendMessage(Message.get("sender.error.notFound").set("player", ipStr).toString());
+                    return;
+                }
 
-          public void run() {
-            Message message = Message.get("muteip.ip.disallowed")
-                                     .set("reason", mute.getReason())
-                                     .set("actor", actor.getName());
+                final boolean isMuted = plugin.getIpMuteStorage().isMuted(ip);
 
-            for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
-              if (IPUtils.toLong(onlinePlayer.getAddress().getAddress()) == ip) {
-                message.sendTo(onlinePlayer);
-              }
+                if (isMuted && !sender.hasPermission("bm.command.muteip.override")) {
+                    Message message = Message.get("muteip.error.exists");
+                    message.set("ip", ipStr);
+
+                    sender.sendMessage(message.toString());
+                    return;
+                }
+
+                final PlayerData actor = CommandUtils.getActor(sender);
+
+                if (actor == null) {
+                    return;
+                }
+
+                if (isMuted) {
+                    IpMuteData mute = plugin.getIpMuteStorage().getMute(ip);
+
+                    if (mute != null) {
+                        try {
+                            plugin.getIpMuteStorage().unmute(mute, actor);
+                        } catch (SQLException e) {
+                            sender.sendMessage(Message.get("sender.error.exception").toString());
+                            e.printStackTrace();
+                            return;
+                        }
+                    }
+                }
+
+                final IpMuteData mute = new IpMuteData(ip, actor, reason, isSoft);
+                boolean created;
+
+                try {
+                    created = plugin.getIpMuteStorage().mute(mute, isSilent);
+                } catch (SQLException e) {
+                    sender.sendMessage(Message.get("sender.error.exception").toString());
+                    e.printStackTrace();
+                    return;
+                }
+
+                if (!created) {
+                    return;
+                }
+                if (isSoft) {
+                    return;
+                }
+
+                // Find online players
+                plugin.getServer().getScheduler().runTask(plugin, new Runnable() {
+
+                    public void run() {
+                        Message message = Message.get("muteip.ip.disallowed")
+                                .set("reason", mute.getReason())
+                                .set("actor", actor.getName());
+
+                        for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+                            if (IPUtils.toLong(onlinePlayer.getAddress().getAddress()) == ip) {
+                                message.sendTo(onlinePlayer);
+                            }
+                        }
+                    }
+                });
             }
-          }
+
         });
-      }
 
-    });
-
-    return true;
-  }
+        return true;
+    }
 
 }
